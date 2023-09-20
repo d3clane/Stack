@@ -35,4 +35,10 @@
 #define PRINT_GREEN_TEXT(STRING_FORMATER, ...)        printf(GREENTEXT STRING_FORMATER STDTEXT, __VA_ARGS__)
 #define PRINT_COLOR_TEXT(COLOR, STRING_FORMATER, ...) printf(COLOR STRING_FORMATER STDTEXT, __VA_ARGS__)
 
+#define HTML_RED_HEAD_BEGIN    "<h style=\"color:red\">"
+#define HTML_GREEN_HEAD_BEGIN  "<h style=\"color:green\">"
+#define HTML_CYAN_HEAD_BEGIN   "<h style=\"color:cyan\">"
+
+#define HTML_HEAD_END          "</h>"
+
 #endif // COLORS_H
