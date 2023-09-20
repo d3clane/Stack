@@ -101,4 +101,13 @@ bool IsFatalError();
 
 //-----------------------------------------------------------------------------------------------
 
+/// @brief returns ErrorInfo.error
+/// @return returns ErrorInfo.error
+static inline Errors ErrorGet()
+{
+    return ErrorInfo.error;
+}
+
+//-----------------------------------------------------------------------------------------------
+
 #endif // ERRORS_H
