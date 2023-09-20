@@ -6,12 +6,13 @@
 
 #include "Errors.h"
 #include "Log.h"
+#include "Types.h"
 
-#define STACK_DUMP(STK) StackDump((STK), __FILE__, __LINE__, __func__)
+#define STACK_DUMP(STK) StackDump((STK), __FILE__, __func__, __LINE__)
 
 struct StackType
 {
-    int* stack;
+    ElemType* stack;
     size_t size;
 
     size_t capacity;
@@ -21,15 +22,15 @@ Errors StackCtor(StackType* const stk, const size_t capacity);
 
 Errors StackDtor(StackType* const stk);
 
-Errors StackPush(StackType* stk, int val);
+Errors StackPush(StackType* stk, ElemType val);
 
-Errors StackPop(StackType* stk, int* retVal = nullptr);
+Errors StackPop(StackType* stk, ElemType* retVal = nullptr);
 
 Errors StackVerify(StackType* stk);
 
 Errors StackDump(StackType* stk, const char* const fileName, 
-                             const int       lineNumber, 
-                             const char* const funcName);
+                                 const char* const funcName,
+                                 const int lineNumber);
 
 Errors StackRealloc(StackType* stk, bool increase);
 
