@@ -5,6 +5,7 @@
 #include <stdio.h>
 
 #include "Errors.h"
+#include "Log.h"
 
 #define STACK_DUMP(STK) StackDump((STK), __FILE__, __LINE__, __func__)
 

@@ -129,26 +129,27 @@ Errors StackDump(StackType* stk, const char* const fileName,
     
     //TODO: change on LOG();
     //TODO: use info from filename lineNumber funcName
-    printf("StackType[%p]\n{\n", stk);
-    printf("StackType capacity: %zu, \n"
-           "StackType size    : %zu\n",
-           stk->capacity, stk->size);
+    LOG_BEGIN();
 
+    LOG("Stk[%p]\n{\n", stk);
+    LOG("Stk capacity: %zu, \n"
+        "Stk size    : %zu\n",
+        stk->capacity, stk->size)
 
-    printf("data stack[%p]\n{\n", stk->stack);
+    LOG("data stack[%p]\n{\n", stk->stack);
     for (size_t i = 0; i < stk->size; ++i) //TODO: min(stk->size, stk->capacity);
     {
-        printf("*[%zu] = %d\n", i, stk->stack[i]); //TODO: change an macros %d ELEM_T
+        LOG("*[%zu] = %d\n", i, stk->stack[i]); //TODO: change an macros %d ELEM_T
     }
-
-    printf("Not used values:\n");
+    
+    LOG("Not used values:\n");
 
     for(size_t i = stk->size; i < stk->capacity; ++i)
     {
-        printf("*[%zu] = %d\n", i, stk->stack[i]); //TODO: change an macros %d ELEM_T
+        LOG("*[%zu] = %d\n", i, stk->stack[i]); //TODO: change an macros %d ELEM_T
     }
 
-    printf("}\n}");
+    LOG("}\n}\n");
 
     return Errors::NO_ERR;
 }
