@@ -134,7 +134,7 @@ Errors StackDump(StackType* stk, const char* const fileName,
     LOG("Stk[%p]\n{\n", stk);
     LOG("Stk capacity: %zu, \n"
         "Stk size    : %zu\n",
-        stk->capacity, stk->size)
+        stk->capacity, stk->size);
 
     LOG("data stack[%p]\n{\n", stk->stack);
     for (size_t i = 0; i < MIN(stk->size, stk->capacity); ++i)
@@ -150,6 +150,8 @@ Errors StackDump(StackType* stk, const char* const fileName,
     }
 
     LOG("}\n}\n");
+
+    LOG_END();
 
     return Errors::NO_ERR;
 }
