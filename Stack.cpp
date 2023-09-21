@@ -1,5 +1,14 @@
-#include "Stack.h"
+#include <math.h>
 
+#include "ArrayFuncs.h"
+#include "Stack.h"
+#include "Log.h"
+
+static Errors StackRealloc(StackType* stk, bool increase);
+
+static inline bool StackIsFull(StackType* stk);
+
+static inline bool StackIsTooBig(StackType* stk);
 
 #define STACK_CHECK(stk)                 \
 do                                       \
@@ -40,7 +49,7 @@ Errors StackCtor(StackType* const stk, const size_t capacity = 0)
     if (stk->stack == nullptr)
     {
         UPDATE_ERR(Errors::MEMORY_ALLOCATION_ERR);
-        return Errors::MEMORY_ALLOCATION_ERR;
+        return     Errors::MEMORY_ALLOCATION_ERR;
     }
 
     return Errors::NO_ERR;
@@ -64,14 +73,23 @@ Errors StackDtor(StackType* const stk)
 Errors StackPush(StackType* stk, ElemType val)
 {
     assert(stk);
+    assert(stk->stack || stk->capacity == 0); //check if stk->stack == nullptr -> stk->capacity = 0
+    assert(isfinite(val));
 
-    STACK_CHECK(stk);
+    Errors stackErr = StackVerify(stk);
+
+    if (stackErr != Errors::NO_ERR && stackErr != Errors::STACK_IS_NULLPTR)      
+    {                                    
+        UPDATE_ERR(stackErr);
+        STACK_DUMP(stk);
+        return stackErr;
+    }
 
     Errors stackReallocErr = Errors::NO_ERR;
     if (StackIsFull(stk)) stackReallocErr = StackRealloc(stk, true);
 
     IF_ERR_RETURN(stackReallocErr);
-    
+
     stk->stack[stk->size++] = val;
 
     return Errors::NO_ERR;
@@ -89,8 +107,9 @@ Errors StackPop(StackType* stk, ElemType* retVal)
         return     Errors::STACK_EMPTY_ERR;
     }
 
-    if (retVal) *retVal = stk->stack[stk->size];
-                                   --stk->size;
+    --stk->size;
+    if (retVal) *retVal = stk->stack[--stk->size];
+    stk->stack[stk->size] = POISON;
 
     if (StackIsTooBig(stk))
     {
@@ -132,24 +151,35 @@ Errors StackDump(StackType* stk, const char* const fileName,
     LOG_BEGIN();
 
     LOG("Stk[%p]\n{\n", stk);
-    LOG("Stk capacity: %zu, \n"
-        "Stk size    : %zu\n",
+    LOG("\tStk capacity: %zu, \n"
+        "\tStk size    : %zu,\n",
         stk->capacity, stk->size);
 
-    LOG("data stack[%p]\n{\n", stk->stack);
-    for (size_t i = 0; i < MIN(stk->size, stk->capacity); ++i)
-    {
-        LOG("*[%zu] = " ElemTypePrint "\n", i, stk->stack[i]);
-    }
-    
-    LOG("Not used values:\n");
+    LOG("\tdata stack[%p]\n\t{\n", stk->stack);
 
-    for(size_t i = stk->size; i < stk->capacity; ++i)
+    if (stk->stack != nullptr)
     {
-        LOG("*[%zu] = " ElemTypePrint "\n", i, stk->stack[i]);
+        //чет MIN здесь прям не оч надо чет с этим сделать
+        for (size_t i = 0; i < MIN(stk->size, stk->capacity); ++i)
+        {
+            LOG("\t\t*[%zu] = " ElemTypeFormat, i, stk->stack[i]);
+
+            if (stk->stack[i] == POISON) LOG(" (POISON)"); //TODO: CHANGE ON MY CMP FUNCTION BASED ON _GENERIC
+            LOG("\n");
+        }
+
+        LOG("\t\tNot used values:\n");
+
+        for(size_t i = stk->size; i < stk->capacity; ++i)
+        {
+            LOG("\t\t*[%zu] = " ElemTypeFormat "\n", i, stk->stack[i]);
+            
+            if (stk->stack[i] == POISON) LOG(" (POISON)"); //TODO: CHANGE ON MY CMP FUNCTION BASED ON _GENERIC
+            LOG("\n");
+        }
     }
 
-    LOG("}\n}\n");
+    LOG("\t}\n}\n");
 
     LOG_END();
 
@@ -161,10 +191,17 @@ Errors StackDump(StackType* stk, const char* const fileName,
 Errors StackRealloc(StackType* stk, bool increase)
 {
     assert(stk);
+    assert(increase || stk->capacity > 0);
+    assert(increase || stk->stack);
 
     if (increase) stk->capacity <<= 1;
     else          stk->capacity >>= 1;
 
+    if (!increase) FillArray(stk->stack + stk->capacity, stk->stack + stk->size, POISON);
+    
+    if (stk->capacity == 0) 
+        stk->capacity = 1;
+    
     ElemType* tmpStack = (ElemType*) realloc(stk->stack, stk->capacity * sizeof(*stk->stack));
 
     if (tmpStack == nullptr)
@@ -180,7 +217,23 @@ Errors StackRealloc(StackType* stk, bool increase)
 
     stk->stack = tmpStack;
 
+    if (increase) FillArray(stk->stack + stk->size, stk->stack + stk->capacity, POISON);
+
     return Errors::NO_ERR;
+}
+
+static inline bool StackIsFull(StackType* stk)
+{
+    assert(stk);
+
+    return stk->size >= stk->capacity;
+}
+
+static inline bool StackIsTooBig(StackType* stk)
+{
+    assert(stk);
+
+    return stk->size * 4 <= stk->capacity;
 }
 
 #undef STACK_CHECK
