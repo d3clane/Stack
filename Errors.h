@@ -11,12 +11,6 @@
 
 //#define NDEBUG
 
-#include <stdio.h>
-#include <string.h>
-#include <math.h>
-
-#include "Colors.h"
-
 //-----------------------------------------------------------------------------------------------
 
 /// \brief Errors than may occur during the program working. 
