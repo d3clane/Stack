@@ -6,6 +6,9 @@
 #include "Errors.h"
 #include "Types.h"
 
+#define STACK_CANARY_PROTECTION
+#define STACK_HASH_PROTECTION
+
 #undef  STACK_DUMP
 #define STACK_DUMP(STK) StackDump((STK), __FILE__, __func__, __LINE__)
 
@@ -22,7 +25,7 @@ struct StackType
 /// @param stk 
 /// @param capacity 
 /// @return 
-Errors StackCtor(StackType* const stk, const size_t capacity);
+Errors StackCtor(StackType* const stk, const size_t capacity = 0);
 
 /// @brief 
 /// @param stk 
