@@ -271,14 +271,8 @@ Errors StackRealloc(StackType* stk, bool increase)
     if (!increase) 
         FillArray(stk->stack + stk->capacity, stk->stack + stk->size, POISON);
     
-    // -------Moving back before reallocing--------
-    stk->stack = MovedPtr(stk->stack, sizeof(CanaryType), -1);
-    ElemType* tmpStack = (ElemType*) realloc(stk->stack, 
+    ElemType* tmpStack = (ElemType*) realloc(MovedPtr(stk->stack, sizeof(CanaryType), -1), 
                                              StackGetSzForCalloc(stk) * sizeof(*stk->stack));
-
-    // ------Moving forward in case tmpStack returned nullptr-------
-    stk->stack = MovedPtr(stk->stack, sizeof(CanaryType), 1);
-
 
     if (tmpStack == nullptr)
     {
