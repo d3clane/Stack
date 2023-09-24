@@ -18,9 +18,9 @@ TARGET = stack
 OBJECTDIR = build
 DOXYFILE = Others/Doxyfile
 
-HEADERS  = Colors.h Errors.h Stack.h Log.h ArrayFuncs.h Types.h
+HEADERS  = Colors.h Errors.h Stack.h Log.h ArrayFuncs.h Types.h HashFuncs.h
 
-FILESCPP = main.cpp Errors.cpp Stack.cpp Log.cpp ArrayFuncs.cpp
+FILESCPP = main.cpp Errors.cpp Stack.cpp Log.cpp ArrayFuncs.cpp HashFuncs.cpp
 
 objects = $(FILESCPP:%.cpp=$(OBJECTDIR)/%.o)
 
