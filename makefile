@@ -18,7 +18,7 @@ TARGET = stack
 OBJECTDIR = build
 DOXYFILE = Others/Doxyfile
 
-HEADERS  = Colors.h Errors.h Stack.h Log.h ArrayFuncs.h
+HEADERS  = Colors.h Errors.h Stack.h Log.h ArrayFuncs.h Types.h
 
 FILESCPP = main.cpp Errors.cpp Stack.cpp Log.cpp ArrayFuncs.cpp
 

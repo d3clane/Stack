@@ -5,12 +5,18 @@
 #include "Colors.h"
 #include "Errors.h"
 
+//---------------
+
+#undef PRINT_ERR
+
 #ifndef NDEBUG
     #define PRINT_ERR(X) fprintf(stderr, RED_TEXT(X "\nError occured in file %s in func %s in line %d\n"), \
                                  ErrorInfo.fileWithError, ErrorInfo.funcWithError, ErrorInfo.lineWithError)
 #else
     #define PRINT_ERR(X) fputs(RED_TEXT(X), stderr);
 #endif
+
+//---------------
 
 ErrorInfoType ErrorInfo = {.error = Errors::NO_ERR, .fileWithError = "NO_ERRORS.txt", .lineWithError = -1};
 
