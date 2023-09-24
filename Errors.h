@@ -16,15 +16,15 @@
 /// \brief Errors than may occur during the program working. 
 enum class Errors 
 {
-    NO_ERR                      =  0,
+    NO_ERR,
     
-    MEMORY_ALLOCATION_ERR       =  1,
+    MEMORY_ALLOCATION_ERR,
     
-    STACK_EMPTY_ERR             =  2,  
-    STACK_IS_NULLPTR            =  3,
-    STACK_CAPACITY_OUT_OF_RANGE =  4,
-    STACK_SIZE_OUT_OF_RANGE     =  5,
-
+    STACK_EMPTY_ERR, 
+    STACK_IS_NULLPTR,
+    STACK_CAPACITY_OUT_OF_RANGE,
+    STACK_SIZE_OUT_OF_RANGE,
+    STACK_INVALID_CANARY, 
 };
 
 //-----------------------------------------------------------------------------------------------

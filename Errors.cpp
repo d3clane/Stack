@@ -40,7 +40,8 @@ void PrintError()
         case Errors::STACK_SIZE_OUT_OF_RANGE:
             PRINT_ERR("Stack size is out of range.\n");
             break;
-
+        case Errors::STACK_INVALID_CANARY:
+            PRINT_ERR("Stack canary is invalid\n");
         case Errors::NO_ERR:
         default:
             break;
@@ -55,6 +56,7 @@ bool IsFatalError()
         case Errors::NO_ERR:
             return false;
         
+        case Errors::STACK_INVALID_CANARY:
         case Errors::MEMORY_ALLOCATION_ERR:
         case Errors::STACK_CAPACITY_OUT_OF_RANGE:
         case Errors::STACK_IS_NULLPTR:
