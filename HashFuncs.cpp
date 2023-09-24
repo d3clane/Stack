@@ -2,18 +2,18 @@
 
 #include "HashFuncs.h"
 
-unsigned int MurmurHash(const void* hashingArr, const size_t length, const unsigned int seed)
+uint64_t MurmurHash(const void* hashingArr, const size_t length, const uint64_t seed)
 {
     assert(hashingArr);
     assert(length > 0);
 
-    const unsigned int c1 = 0x5bd1e995; 
-    const unsigned int c2 = 24;
+    const uint64_t c1 = 0x5bd1e995; 
+    const uint64_t c2 = 24;
 
-    unsigned int hash = seed ^ (unsigned int)length;
+    uint64_t hash = seed ^ (uint64_t)length;
 
     const unsigned char* data = (const unsigned char*)hashingArr;
-    unsigned int word = 0;
+    uint64_t word = 0;
 
     size_t len = length;
     while (len >= 4)
