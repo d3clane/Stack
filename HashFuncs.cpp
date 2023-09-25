@@ -19,7 +19,7 @@ uint64_t MurmurHash(const void* hashingArr, const size_t length, const uint64_t 
     while (len >= 4)
     {
         word  = data[0];
-        word |= data[1] << 8;
+        word |= data[1] <<  8;
         word |= data[2] << 16;
         word |= data[3] << 24;
 
