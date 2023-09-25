@@ -13,6 +13,7 @@
 
 //-----------------------------------------------------------------------------------------------
 
+//TODO: think about making bits structure and return it
 /// \brief Errors than may occur during the program working. 
 enum class Errors 
 {
@@ -25,30 +26,33 @@ enum class Errors
     STACK_CAPACITY_OUT_OF_RANGE,
     STACK_SIZE_OUT_OF_RANGE,
     STACK_INVALID_CANARY, 
+    STACK_INVALID_DATA_HASH,
+    STACK_INVALID_STRUCT_HASH
 };
 
 //-----------------------------------------------------------------------------------------------
 
 #ifndef NDEBUG
-/// \brief Contains info about errors - File with error, line with error, error code. 
-/// \warning Have to be updated with UPDATE_ERR() only
-struct ErrorInfoType 
-{
-    Errors error;              ///< error code
-    const char* fileWithError; ///< __FILE__ (file name with error)
-    const char* funcWithError; ///< __func__ (function name with error)
-    int lineWithError;         ///< __LINE__ (line with error)
 
-};
+    /// \brief Contains info about errors - File with error, line with error, error code. 
+    /// \warning Have to be updated with UPDATE_ERR() only
+    struct ErrorInfoType 
+    {
+        Errors error;              ///< error code
+        const char* fileWithError; ///< __FILE__ (file name with error)
+        const char* funcWithError; ///< __func__ (function name with error)
+        int lineWithError;         ///< __LINE__ (line with error)
+
+    };
 
 #else
 
-/// \brief Contains info about errors - File with error, line with error, error code. 
-/// \warning Have to be updated with UPDATE_ERR() only
-struct ErrorInfoType 
-{
-    Errors error;              ///< error code
-};
+    /// \brief Contains info about errors - File with error, line with error, error code. 
+    /// \warning Have to be updated with UPDATE_ERR() only
+    struct ErrorInfoType 
+    {
+        Errors error;              ///< error code
+    };
 
 #endif
 
@@ -60,24 +64,24 @@ extern ErrorInfoType ErrorInfo;
 
 #ifndef NDEBUG
 
-/// \brief updates special struct with errors errorInfo 
-/// \details copyFileName copy of __FILE__ define at the moment macros is called 
-/// \details copyLineNumber __LINE__ define at the moment macros is valled
-/// \param [in]ERROR Errors enum with error occurred in program
-#define UPDATE_ERR(ERROR)                                             \
-do                                                                    \
-{                                                                     \
-    ErrorInfo.fileWithError = __FILE__;                               \
-    ErrorInfo.lineWithError = __LINE__;                               \
-    ErrorInfo.funcWithError = __func__;                               \
-    ErrorInfo.error = ERROR;                                          \
-} while(0)
+    /// \brief updates special struct with errors errorInfo 
+    /// \details copyFileName copy of __FILE__ define at the moment macros is called 
+    /// \details copyLineNumber __LINE__ define at the moment macros is valled
+    /// \param [in]ERROR Errors enum with error occurred in program
+    #define UPDATE_ERR(ERROR)                                             \
+    do                                                                    \
+    {                                                                     \
+        ErrorInfo.fileWithError = __FILE__;                               \
+        ErrorInfo.lineWithError = __LINE__;                               \
+        ErrorInfo.funcWithError = __func__;                               \
+        ErrorInfo.error = ERROR;                                          \
+    } while(0)
     
 #else
 
-/// \brief updates only error code without debug info
-/// \param [in] ERROR Errors enum with error occurred in program
-#define UPDATE_ERR(ERROR) ErrorInfo.error = ERROR
+    /// \brief updates only error code without debug info
+    /// \param [in] ERROR Errors enum with error occurred in program
+    #define UPDATE_ERR(ERROR) ErrorInfo.error = ERROR
 
 #endif
 
