@@ -42,6 +42,13 @@ void PrintError()
             break;
         case Errors::STACK_INVALID_CANARY:
             PRINT_ERR("Stack canary is invalid\n");
+            break;
+        case Errors::STACK_INVALID_DATA_HASH:
+            PRINT_ERR("Stack data hash is invalid\n");
+            break;
+        case Errors::STACK_INVALID_STRUCT_HASH:
+            PRINT_ERR("Stack struct hash is invalid\n");
+
         case Errors::NO_ERR:
         default:
             break;
@@ -56,6 +63,8 @@ bool IsFatalError()
         case Errors::NO_ERR:
             return false;
         
+        case Errors::STACK_INVALID_STRUCT_HASH:
+        case Errors::STACK_INVALID_DATA_HASH:
         case Errors::STACK_INVALID_CANARY:
         case Errors::MEMORY_ALLOCATION_ERR:
         case Errors::STACK_CAPACITY_OUT_OF_RANGE:

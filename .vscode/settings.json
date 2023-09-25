@@ -3,6 +3,17 @@
         "cmath": "cpp",
         "__bit_reference": "cpp",
         "__split_buffer": "cpp",
-        "vector": "cpp"
+        "vector": "cpp",
+        "array": "cpp",
+        "span": "cpp",
+        "string": "cpp",
+        "string_view": "cpp",
+        "__hash_table": "cpp",
+        "bitset": "cpp",
+        "deque": "cpp",
+        "initializer_list": "cpp",
+        "queue": "cpp",
+        "unordered_map": "cpp",
+        "format": "cpp"
     }
 }
