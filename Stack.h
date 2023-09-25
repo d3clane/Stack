@@ -6,19 +6,27 @@
 #include "Errors.h"
 #include "Types.h"
 
+#undef  STACK_CANARY_PROTECTION
 #define STACK_CANARY_PROTECTION
+
+#undef  STACK_HASH_PROTECTION
 #define STACK_HASH_PROTECTION
 
 #undef  STACK_DUMP
 #define STACK_DUMP(STK) StackDump((STK), __FILE__, __func__, __LINE__)
 
-/// @brief Contains all info about stack to use it 
+/// @brief Contains all info about data to use it 
 struct StackType
 {
-    ElemType* stack;  ///< stack with values. Have to be a dynamic array.
-    size_t size;      ///< pos to push/pop values (actually size of the stack at this moment)
+    ElemType* data;       ///< data with values. Have to be a dynamic array.
+    size_t size;          ///< pos to push/pop values (actually size of the data at this moment).
+#ifdef STACK_HASH_PROTECTION
+    uint64_t dataHash;    ///< hash of all elements in data.
+    
+    uint64_t structHash;  ///< hash of all elements in struct.
+#endif
 
-    size_t capacity;  ///< REAL size of the stack at this moment (calloced more than need at this moment)
+    size_t capacity;   ///< REAL size of the data at this moment (calloced more than need at this moment).
 };
 
 /// @brief Constructor
@@ -65,7 +73,7 @@ Errors StackDump(StackType* stk, const char* const fileName,
 static inline bool StackIsEmpty(StackType* stk)
 {
     assert(stk);
-    assert(stk->stack);
+    assert(stk->data);
     
     return stk->size == 0;
 }
