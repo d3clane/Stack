@@ -9,7 +9,8 @@
 
 //--------CANARY PROTECTION----------
 
-#undef GET_AFTER_CANARY_ADR
+#undef CANARY_CTOR
+#undef GET_AFTER_FIRST_CANARY_ADR
 #undef GET_FIRST_CANARY_ADR
 #undef GET_SECOND_CANARY_ADR
 #ifdef STACK_CANARY_PROTECTION
@@ -18,14 +19,24 @@
     #define CanaryTypeFormat "%#0llx"
     const CanaryType Canary = 0xDEADBABE;
 
-//TODO: спросить мб ваще лучше функции такие запилить под условную компиляцию
-    #define GET_AFTER_CANARY_ADR(STK) MovePtr((STK)->data, sizeof(CanaryType), 1);
+    #define CANARY_CTOR(STORAGE)                        \
+    do                                                  \
+    {                                                   \
+        assert(STORAGE);                                \
+        CanaryType* strg = (CanaryType*) (STORAGE);     \
+                                                        \
+        *strg = Canary;                                 \
+    } while(0)
+
+    #define GET_AFTER_FIRST_CANARY_ADR(STK) MovePtr((STK)->data, sizeof(CanaryType), 1);
     #define GET_FIRST_CANARY_ADR(STK) MovePtr((STK)->data, sizeof(CanaryType), -1)
     #define GET_SECOND_CANARY_ADR(STK) (STK)->data + (STK)->capacity
 
 #else
     
-    #define GET_AFTER_CANARY_ADR(STK)  (STK)->data
+    #define CANARY_CTOR
+
+    #define GET_AFTER_FIRST_CANARY_ADR(STK)  (STK)->data
     #define GET_FIRST_CANARY_ADR(STK)  (STK)->data
     #define GET_SECOND_CANARY_ADR(STK) (STK)->data
 
@@ -48,21 +59,17 @@
     
 #else
 
-    #define GET_HASH(STK)           ;
-    #define UPDATE_DATA_HASH(STK)   ;
+    #define GET_HASH(STK)           
+    #define UPDATE_DATA_HASH(STK)   
 
-    #define UPDATE_STRUCT_HASH(STK) ;
+    #define UPDATE_STRUCT_HASH(STK) 
 #endif
 
 //----------static functions------------
 
 static Errors StackRealloc(StackType* stk, bool increase);
 
-static inline void CanaryCtor(void* const storage);
-
 static inline ElemType* MovePtr(ElemType* const data, const size_t moveSz, const int times);
-
-static inline void MovePtrOnCanarySz(const ElemType** const data, const size_t times);
 
 static inline size_t StackGetSzForCalloc(StackType* const stk);
 
@@ -85,10 +92,10 @@ static const size_t STANDARD_CAPACITY = 64;
     do                                       \
     {                                        \
         Errors stackErr = StackVerify(stk);  \
-                                            \
+                                             \
         if (stackErr != Errors::NO_ERR)      \
         {                                    \
-            UPDATE_ERR(stackErr);            \
+            HANDLE_ERR(stackErr);            \
             STACK_DUMP(stk);                 \
             return stackErr;                 \
         }                                    \
@@ -127,19 +134,16 @@ Errors StackCtor(StackType* const stk, const size_t capacity)
 
     if (stk->data == nullptr)
     {
-        UPDATE_ERR(Errors::MEMORY_ALLOCATION_ERR);  
+        HANDLE_ERR(Errors::MEMORY_ALLOCATION_ERR);  
         return     Errors::MEMORY_ALLOCATION_ERR;
     }
 
     //-----------------------
 
-    //printf("adress before: %p\n", stk->data);
     StackFill(stk);
-    //printf("adress after1: %p\n", stk->data);
 
-    stk->data = GET_AFTER_CANARY_ADR(stk);
+    stk->data = GET_AFTER_FIRST_CANARY_ADR(stk);
 
-    //printf("adress after2: %p\n", stk->data);
     UPDATE_DATA_HASH(stk);
     UPDATE_STRUCT_HASH(stk);
 
@@ -199,7 +203,7 @@ Errors StackPop(StackType* stk, ElemType* retVal)
     
     if (StackIsEmpty(stk))
     { 
-        UPDATE_ERR(Errors::STACK_EMPTY_ERR);
+        HANDLE_ERR(Errors::STACK_EMPTY_ERR);
         return     Errors::STACK_EMPTY_ERR;
     }
 
@@ -233,19 +237,19 @@ Errors StackVerify(StackType* stk)
 
     if (stk->data == nullptr)
     {
-       UPDATE_ERR(Errors::STACK_IS_NULLPTR);
+       HANDLE_ERR(Errors::STACK_IS_NULLPTR);
        return     Errors::STACK_IS_NULLPTR;
     }
 
     if (stk->capacity <= 0)
     {  
-        UPDATE_ERR(Errors::STACK_CAPACITY_OUT_OF_RANGE);
+        HANDLE_ERR(Errors::STACK_CAPACITY_OUT_OF_RANGE);
         return     Errors::STACK_CAPACITY_OUT_OF_RANGE;
     }
 
     if (stk->size > stk->capacity)
     {
-        UPDATE_ERR(Errors::STACK_SIZE_OUT_OF_RANGE);
+        HANDLE_ERR(Errors::STACK_SIZE_OUT_OF_RANGE);
         return     Errors::STACK_SIZE_OUT_OF_RANGE;
     }
 
@@ -254,13 +258,13 @@ Errors StackVerify(StackType* stk)
 #ifdef STACK_CANARY_PROTECTION
     if (*(CanaryType*)(GET_FIRST_CANARY_ADR(stk)) != Canary)
     {
-        UPDATE_ERR(Errors::STACK_INVALID_CANARY);
+        HANDLE_ERR(Errors::STACK_INVALID_CANARY);
         return     Errors::STACK_INVALID_CANARY;
     }
 
     if (*(CanaryType*)(GET_SECOND_CANARY_ADR(stk)) != Canary)
     {
-        UPDATE_ERR(Errors::STACK_INVALID_CANARY);
+        HANDLE_ERR(Errors::STACK_INVALID_CANARY);
         return     Errors::STACK_INVALID_CANARY;
     }
 #endif
@@ -270,7 +274,7 @@ Errors StackVerify(StackType* stk)
 #ifdef STACK_HASH_PROTECTION
     if (CALC_DATA_HASH(stk) != stk->dataHash)
     {
-        UPDATE_ERR(Errors::STACK_INVALID_DATA_HASH);
+        HANDLE_ERR(Errors::STACK_INVALID_DATA_HASH);
         return     Errors::STACK_INVALID_DATA_HASH;
     }
 
@@ -279,7 +283,7 @@ Errors StackVerify(StackType* stk)
 
     if (prevStructHash != stk->structHash)
     {
-        UPDATE_ERR(Errors::STACK_INVALID_STRUCT_HASH);
+        HANDLE_ERR(Errors::STACK_INVALID_STRUCT_HASH);
 
         stk->structHash = prevStructHash;
 
@@ -380,7 +384,7 @@ Errors StackRealloc(StackType* stk, bool increase)
 
     if (tmpStack == nullptr)
     {
-        UPDATE_ERR(Errors::MEMORY_ALLOCATION_ERR);
+        HANDLE_ERR(Errors::MEMORY_ALLOCATION_ERR);
 
         assert(stk);
         if (increase) stk->capacity >>= 1;
@@ -394,13 +398,13 @@ Errors StackRealloc(StackType* stk, bool increase)
     stk->data = tmpStack;
 
     // -------Moving forward after reallocing-------
-    stk->data = GET_AFTER_CANARY_ADR(stk);
+    stk->data = GET_AFTER_FIRST_CANARY_ADR(stk);
 
     if (increase) 
         FillArray(stk->data + stk->size, stk->data + stk->capacity, POISON);
 
     // -------Putting canary at the end-----------
-    CanaryCtor(GET_SECOND_CANARY_ADR(stk));
+    CANARY_CTOR(GET_SECOND_CANARY_ADR(stk));
 
     STACK_CHECK(stk);
 
@@ -421,27 +425,6 @@ static inline bool StackIsTooBig(StackType* stk)
     return (stk->size * 4 <= stk->capacity) & (stk->capacity > STANDARD_CAPACITY);
 }
 
-//TODO: maybe changing on define idk
-#ifdef STACK_CANARY_PROTECTION
-
-static inline void CanaryCtor(void* const storage)
-{
-    assert(storage);
-
-    CanaryType* strg = (CanaryType*) storage;
-
-    *strg = Canary;
-}
-
-#else
-
-static inline void CanaryCtor(void* const storage)
-{
-    return;
-}
-
-#endif
-
 static inline ElemType* MovePtr(ElemType* const data, const size_t moveSz, const int times)
 {
     assert(data);
@@ -450,25 +433,18 @@ static inline ElemType* MovePtr(ElemType* const data, const size_t moveSz, const
     return (ElemType*)((char*)data + times * (long long)moveSz);
 }
 
-static inline void MovePtrOnCanarySz(const ElemType** const data, const size_t times)
-{
-    assert(data);
-    
-    *data = (const ElemType*)((const CanaryType*)(*data) + times);
-}
-
 static Errors StackFill(StackType* const stk)
 {
     assert(stk);
     assert(stk->data);
     assert(stk->capacity > 0);
 
-    CanaryCtor(stk->data);
-    stk->data = GET_AFTER_CANARY_ADR(stk);
+    CANARY_CTOR(stk->data);
+    stk->data = GET_AFTER_FIRST_CANARY_ADR(stk);
 
     FillArray(stk->data, stk->data + stk->capacity, POISON);
-    GET_AFTER_CANARY_ADR(stk);
-    CanaryCtor(GET_SECOND_CANARY_ADR(stk));
+    GET_AFTER_FIRST_CANARY_ADR(stk);
+    CANARY_CTOR(GET_SECOND_CANARY_ADR(stk));
 
     stk->data = GET_FIRST_CANARY_ADR(stk);
 
@@ -488,7 +464,7 @@ static inline size_t StackGetSzForCalloc(StackType* const stk)
 
 #undef STACK_CHECK
 #undef IF_ERR_RETURN
-#undef GET_AFTER_CANARY_ADR
+#undef GET_AFTER_FIRST_CANARY_ADR
 #undef GET_FIRST_CANARY_ADR
 #undef GET_SECOND_CANARY_ADR
 

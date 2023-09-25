@@ -20,6 +20,7 @@ struct StackType
 {
     ElemType* data;       ///< data with values. Have to be a dynamic array.
     size_t size;          ///< pos to push/pop values (actually size of the data at this moment).
+
 #ifdef STACK_HASH_PROTECTION
     uint64_t dataHash;    ///< hash of all elements in data.
     
