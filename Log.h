@@ -12,8 +12,6 @@ void LogOpen(const char* argv0);
 
 void LogClose();
 
-//TODO: __DATE__ and __TIME__ is showing compiling time - how to get current time 
-
 #undef  LOG_BEGIN
 #define LOG_BEGIN()                                                              \
 do                                                                               \
