@@ -6,10 +6,8 @@
 #include "Errors.h"
 #include "Types.h"
 
-#undef  STACK_CANARY_PROTECTION
 #define STACK_CANARY_PROTECTION
 
-#undef  STACK_HASH_PROTECTION
 #define STACK_HASH_PROTECTION
 
 #undef  STACK_DUMP
@@ -27,7 +25,7 @@ struct StackType
     uint64_t structHash;  ///< hash of all elements in struct.
 #endif
 
-    size_t capacity;   ///< REAL size of the data at this moment (calloced more than need at this moment).
+    size_t capacity;  ///< REAL size of the data at this moment (calloced more than need at this moment).
 };
 
 /// @brief Constructor

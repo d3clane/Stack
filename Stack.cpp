@@ -28,9 +28,10 @@
         *strg = Canary;                                 \
     } while(0)
 
+    const size_t Aligning = 8;
     #define GET_AFTER_FIRST_CANARY_ADR(STK) MovePtr((STK)->data, sizeof(CanaryType), 1);
     #define GET_FIRST_CANARY_ADR(STK) MovePtr((STK)->data, sizeof(CanaryType), -1)
-    #define GET_SECOND_CANARY_ADR(STK) (STK)->data + (STK)->capacity
+    #define GET_SECOND_CANARY_ADR(STK) (char*)((STK)->data + (STK)->capacity) + Aligning - (STK->capacity * sizeof(ElemType)) % Aligning
 
 #else
     
@@ -456,7 +457,7 @@ static inline size_t StackGetSzForCalloc(StackType* const stk)
     assert(stk);
 
 #ifdef STACK_CANARY_PROTECTION
-    return stk->capacity + 2 * sizeof(CanaryType) / sizeof(*stk->data);
+    return stk->capacity + 3 * sizeof(CanaryType) / sizeof(*stk->data);
 #else
     return stk->capacity;
 #endif
@@ -467,4 +468,3 @@ static inline size_t StackGetSzForCalloc(StackType* const stk)
 #undef GET_AFTER_FIRST_CANARY_ADR
 #undef GET_FIRST_CANARY_ADR
 #undef GET_SECOND_CANARY_ADR
-
