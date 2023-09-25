@@ -4,16 +4,19 @@
 
 #include "Colors.h"
 #include "Errors.h"
+#include "Log.h"
 
 //---------------
 
 #undef PRINT_ERR
 
 #ifndef NDEBUG
-    #define PRINT_ERR(X) fprintf(stderr, RED_TEXT(X "\nError occured in file %s in func %s in line %d\n"), \
-                                 ErrorInfo.fileWithError, ErrorInfo.funcWithError, ErrorInfo.lineWithError)
+    #define PRINT_ERR(X) LOG(HTML_RED_HEAD_BEGIN "\n"                                \
+                             X "Error occured in file %s in func %s in line %d\n"    \
+                             HTML_HEAD_END,                                          \
+                             ErrorInfo.fileWithError, ErrorInfo.funcWithError, ErrorInfo.lineWithError)
 #else
-    #define PRINT_ERR(X) fputs(RED_TEXT(X), stderr);
+    #define PRINT_ERR(X) LOG(RED_TEXT(X));
 #endif
 
 //---------------
@@ -41,13 +44,13 @@ void PrintError()
             PRINT_ERR("Stack size is out of range.\n");
             break;
         case Errors::STACK_INVALID_CANARY:
-            PRINT_ERR("Stack canary is invalid\n");
+            PRINT_ERR("Stack canary is invalid.\n");
             break;
         case Errors::STACK_INVALID_DATA_HASH:
-            PRINT_ERR("Stack data hash is invalid\n");
+            PRINT_ERR("Stack data hash is invalid.\n");
             break;
         case Errors::STACK_INVALID_STRUCT_HASH:
-            PRINT_ERR("Stack struct hash is invalid\n");
+            PRINT_ERR("Stack struct hash is invalid.\n");
 
         case Errors::NO_ERR:
         default:

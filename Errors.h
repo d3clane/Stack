@@ -77,6 +77,13 @@ extern ErrorInfoType ErrorInfo;
         ErrorInfo.error = ERROR;                                          \
     } while(0)
     
+    #define HANDLE_ERR(ERROR)                                             \
+    do                                                                    \
+    {                                                                     \
+        UPDATE_ERR(ERROR);                                                \
+        PrintError();                                                     \
+    } while (0);                                                          \
+    
 #else
 
     /// \brief updates only error code without debug info
