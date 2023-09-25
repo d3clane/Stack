@@ -5,10 +5,10 @@
 #include <math.h>
 #include <stdio.h>
 
-typedef double ElemType;
+typedef float ElemType;
 
 #undef  ElemTypeFormat
-#define ElemTypeFormat "%lf"
+#define ElemTypeFormat "%f"
 
 static const ElemType POISON = NAN;
 
@@ -23,7 +23,7 @@ static inline int Equal(const ElemType* const a, const ElemType* const b)
     if (!isfiniteA & !isfiniteB)
         return 1;
     
-    static const ElemType EPS = 1e-7;
+    static const ElemType EPS = (ElemType) 1e-7;
 
     return fabs(*a - *b) < EPS;
 }
