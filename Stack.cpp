@@ -31,7 +31,8 @@
     const size_t Aligning = 8;
     #define GET_AFTER_FIRST_CANARY_ADR(STK) MovePtr((STK)->data, sizeof(CanaryType), 1);
     #define GET_FIRST_CANARY_ADR(STK) MovePtr((STK)->data, sizeof(CanaryType), -1)
-    #define GET_SECOND_CANARY_ADR(STK) (char*)((STK)->data + (STK)->capacity) + Aligning - (STK->capacity * sizeof(ElemType)) % Aligning
+    #define GET_SECOND_CANARY_ADR(STK) (char*)((STK)->data + (STK)->capacity) +  \
+                                                Aligning - (STK->capacity * sizeof(ElemType)) % Aligning
 
 #else
     
@@ -270,13 +271,12 @@ Errors StackVerify(StackType* stk)
     }
 #endif
 
-    //------------Hash cheking----------
+    //------------Hash cheсking----------
 
 #ifdef STACK_HASH_PROTECTION
     if (CALC_DATA_HASH(stk) != stk->dataHash)
     {
-        HANDLE_ERR(Errors::STACK_INVALID_DATA_HASH);
-        return     Errors::STACK_INVALID_DATA_HASH;
+        UPDATE_ERR(Errors::STACK_INVALID_DATA_HASH);
     }
 
     uint64_t prevStructHash = stk->structHash;
@@ -284,11 +284,9 @@ Errors StackVerify(StackType* stk)
 
     if (prevStructHash != stk->structHash)
     {
-        HANDLE_ERR(Errors::STACK_INVALID_STRUCT_HASH);
+        UPDATE_ERR(Errors::STACK_INVALID_STRUCT_HASH);
 
         stk->structHash = prevStructHash;
-
-        return Errors::STACK_INVALID_STRUCT_HASH;
     }
 #endif
 
@@ -365,11 +363,6 @@ Errors StackDump(StackType* stk, const char* const fileName,
 
 Errors StackRealloc(StackType* stk, bool increase)
 {
-    /*char *buffer[70];
-    int sz = backtrace((void**) buffer, 70);
-    
-    backtrace_symbols_fd((void**) buffer, sz, fileno(stdout));*/
-
     assert(stk);
     assert(stk->data);
     assert(stk->capacity > 0);
@@ -379,7 +372,7 @@ Errors StackRealloc(StackType* stk, bool increase)
 
     if (!increase) 
         FillArray(stk->data + stk->capacity, stk->data + stk->size, POISON);
-    
+
     ElemType* tmpStack = (ElemType*) realloc(GET_FIRST_CANARY_ADR(stk), 
                                              StackGetSzForCalloc(stk) * sizeof(*stk->data));
 
