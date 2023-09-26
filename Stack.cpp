@@ -271,7 +271,7 @@ Errors StackVerify(StackType* stk)
     }
 #endif
 
-    //------------Hash cheсking----------
+    //------------Hash checking----------
 
 #ifdef STACK_HASH_PROTECTION
     if (CALC_DATA_HASH(stk) != stk->dataHash)
