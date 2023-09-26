@@ -29,7 +29,7 @@
     } while(0)
 
     const size_t Aligning = 8;
-    #define GET_AFTER_FIRST_CANARY_ADR(STK) MovePtr((STK)->data, sizeof(CanaryType), 1);
+    #define GET_AFTER_FIRST_CANARY_ADR(STK) MovePtr((STK)->data, sizeof(CanaryType), 1)
     #define GET_FIRST_CANARY_ADR(STK) MovePtr((STK)->data, sizeof(CanaryType), -1)
     #define GET_SECOND_CANARY_ADR(STK) (char*)((STK)->data + (STK)->capacity) +  \
                                                 Aligning - (STK->capacity * sizeof(ElemType)) % Aligning
@@ -49,7 +49,7 @@
 #undef UPDATE_DATA_HASH
 #ifdef STACK_HASH_PROTECTION
 
-    #define CALC_DATA_HASH(STK) MurmurHash((STK)->data, (STK)->capacity * sizeof(ElemType))
+    #define CALC_DATA_HASH(STK) MurmurHash((STK)->data, ((STK)->capacity - 1) * sizeof(ElemType))
     #define UPDATE_DATA_HASH(STK) (STK)->dataHash = CALC_DATA_HASH(STK)
     
     #define UPDATE_STRUCT_HASH(STK)                             \
@@ -276,7 +276,8 @@ Errors StackVerify(StackType* stk)
 #ifdef STACK_HASH_PROTECTION
     if (CALC_DATA_HASH(stk) != stk->dataHash)
     {
-        UPDATE_ERR(Errors::STACK_INVALID_DATA_HASH);
+        HANDLE_ERR(Errors::STACK_INVALID_DATA_HASH);
+        return     Errors::STACK_INVALID_DATA_HASH;
     }
 
     uint64_t prevStructHash = stk->structHash;
@@ -284,9 +285,11 @@ Errors StackVerify(StackType* stk)
 
     if (prevStructHash != stk->structHash)
     {
-        UPDATE_ERR(Errors::STACK_INVALID_STRUCT_HASH);
+        HANDLE_ERR(Errors::STACK_INVALID_STRUCT_HASH);
 
         stk->structHash = prevStructHash;
+
+        return Errors::STACK_INVALID_STRUCT_HASH;
     }
 #endif
 
