@@ -10,9 +10,6 @@
 
 #define STACK_HASH_PROTECTION
 
-#undef  STACK_DUMP
-#define STACK_DUMP(STK) StackDump((STK), __FILE__, __func__, __LINE__)
-
 /// @brief Contains all info about data to use it 
 struct StackType
 {
