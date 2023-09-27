@@ -1,15 +1,18 @@
+#include <assert.h>
 #include <stdio.h>
 #include <string.h>
 #include <math.h>
 
-#include "Colors.h"
 #include "Errors.h"
 #include "Log.h"
 
 //---------------
 
-#undef PRINT_ERR
+static void PrintError(const Errors error);
 
+static bool IsFatalError(const Errors error);
+
+#undef PRINT_ERR
 #ifndef NDEBUG
     #define PRINT_ERR(X) LOG(HTML_RED_HEAD_BEGIN "\n"                                \
                              X "Error occured in file %s in func %s in line %d\n"    \
@@ -21,11 +24,23 @@
 
 //---------------
 
-ErrorInfoType ErrorInfo = {.error = Errors::NO_ERR, .fileWithError = "NO_ERRORS.txt", .lineWithError = -1};
+ErrorInfoType ErrorInfo = {.error = 0, .fileWithError = "NO_ERRORS.txt", .lineWithError = -1};
 
 void PrintError()
 {
-    switch(ErrorInfo.error)
+    for (size_t errorIndex = 0; errorIndex < sizeof(ErrorType) * 8; ++errorIndex)
+    {
+        if (GetError((Errors) errorIndex))
+            PrintError((Errors) errorIndex);
+    }
+}
+
+static void PrintError(const Errors error)
+{
+    assert((size_t) error <= sizeof(ErrorType) * 8);
+    assert((size_t) error >= 0);
+
+    switch(error)
     {
         case Errors::MEMORY_ALLOCATION_ERR:
             PRINT_ERR("Memory allocation error.\n");
@@ -58,12 +73,22 @@ void PrintError()
     }
 }
 
-bool IsFatalError()
+bool HasFatalError()
 {
-    switch(ErrorInfo.error)
+    for (size_t errorIndex = 0; errorIndex < sizeof(ErrorType) * 8; ++errorIndex)
     {
-        case Errors::STACK_EMPTY_ERR:
+        if (GetError((Errors) errorIndex) && IsFatalError((Errors) errorIndex)) return true;
+    }
+
+    return false;    
+}
+
+static bool IsFatalError(const Errors error)
+{
+    switch(error)
+    {   
         case Errors::NO_ERR:
+        case Errors::STACK_EMPTY_ERR:
             return false;
         
         case Errors::STACK_INVALID_STRUCT_HASH:
