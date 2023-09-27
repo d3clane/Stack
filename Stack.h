@@ -29,29 +29,29 @@ struct StackType
 /// @param stk 
 /// @param capacity 
 /// @return 
-Errors StackCtor(StackType* const stk, const size_t capacity = 0);
+uint64_t StackCtor(StackType* const stk, const size_t capacity = 0);
 
 /// @brief 
 /// @param stk 
 /// @return 
-Errors StackDtor(StackType* const stk);
+uint64_t StackDtor(StackType* const stk);
 
 /// @brief 
 /// @param stk 
 /// @param val 
 /// @return 
-Errors StackPush(StackType* stk, ElemType val);
+uint64_t StackPush(StackType* stk, ElemType val);
 
 /// @brief 
 /// @param stk 
 /// @param retVal 
 /// @return 
-Errors StackPop(StackType* stk, ElemType* retVal = nullptr);
+uint64_t StackPop(StackType* stk, ElemType* retVal = nullptr);
 
 /// @brief 
 /// @param stk 
 /// @return 
-Errors StackVerify(StackType* stk);
+uint64_t StackVerify(StackType* stk);
 
 /// @brief 
 /// @param stk 
@@ -59,7 +59,7 @@ Errors StackVerify(StackType* stk);
 /// @param funcName 
 /// @param lineNumber 
 /// @return 
-Errors StackDump(StackType* stk, const char* const fileName, 
+void StackDump(StackType* stk, const char* const fileName, 
                                  const char* const funcName,
                                  const int lineNumber);
 

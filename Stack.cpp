@@ -69,17 +69,19 @@
 
 //----------static functions------------
 
-static Errors StackRealloc(StackType* stk, bool increase);
+static uint64_t StackRealloc(StackType* stk, bool increase);
 
 static inline ElemType* MovePtr(ElemType* const data, const size_t moveSz, const int times);
 
 static inline size_t StackGetSzForCalloc(StackType* const stk);
 
-static Errors StackDataFill(StackType* const stk);
+static void StackDataFill(StackType* const stk);
 
 static inline bool StackIsFull(StackType* stk);
 
 static inline bool StackIsTooBig(StackType* stk);
+
+static inline uint64_t AddError(const uint64_t errors, const Errors error);
 
 //--------------Consts-----------------
 
@@ -96,11 +98,10 @@ static const size_t STANDARD_CAPACITY = 64;
     #define STACK_CHECK(stk)                 \
     do                                       \
     {                                        \
-        Errors stackErr = StackVerify(stk);  \
+        uint64_t stackErr = StackVerify(stk);\
                                              \
-        if (stackErr != Errors::NO_ERR)      \
+        if (stackErr != 0)                   \
         {                                    \
-            HANDLE_ERR(stackErr);            \
             STACK_DUMP(stk);                 \
             return stackErr;                 \
         }                                    \
@@ -109,11 +110,10 @@ static const size_t STANDARD_CAPACITY = 64;
     #define STACK_CHECK_NO_RETURN(stk)       \
     do                                       \
     {                                        \
-        Errors stackErr = StackVerify(stk);  \
+        uint64_t stackErr = StackVerify(stk);\
                                              \
-        if (stackErr != Errors::NO_ERR)      \
+        if (stackErr != 0)                   \
         {                                    \
-            HANDLE_ERR(stackErr);            \
             STACK_DUMP(stk);                 \
         }                                    \
     } while (0)
@@ -130,16 +130,17 @@ static const size_t STANDARD_CAPACITY = 64;
 #define IF_ERR_RETURN(ERR)              \
 do                                      \
 {                                       \
-    if ((ERR) != Errors::NO_ERR)        \
+    if (ERR)                            \
         return ERR;                     \
 } while (0)
 
 //---------------
 
-Errors StackCtor(StackType* const stk, const size_t capacity)
+uint64_t StackCtor(StackType* const stk, const size_t capacity)
 {
     assert(stk);
 
+    uint64_t errors = 0;
     stk->size = 0;
 
     if (capacity > 0) stk->capacity = capacity;
@@ -152,7 +153,7 @@ Errors StackCtor(StackType* const stk, const size_t capacity)
     if (stk->data == nullptr)
     {
         HANDLE_ERR(Errors::MEMORY_ALLOCATION_ERR);  
-        return     Errors::MEMORY_ALLOCATION_ERR;
+        return AddError(errors, Errors::MEMORY_ALLOCATION_ERR);   
     }
 
     //-----------------------
@@ -166,10 +167,10 @@ Errors StackCtor(StackType* const stk, const size_t capacity)
 
     STACK_CHECK(stk);
 
-    return Errors::NO_ERR;
+    return errors;
 }
 
-Errors StackDtor(StackType* const stk)
+uint64_t StackDtor(StackType* const stk)
 {
     assert(stk);
 
@@ -187,18 +188,20 @@ Errors StackDtor(StackType* const stk)
     stk->dataHash = 0;
 #endif
 
-    return Errors::NO_ERR;
+    return 0;
 }
 
-Errors StackPush(StackType* stk, ElemType val)
+uint64_t StackPush(StackType* stk, ElemType val)
 {
     assert(stk);
     assert(isfinite(val));
 
-    DELETE_ERR(Errors::STACK_EMPTY_ERR);
+    if (GetError() == Errors::STACK_EMPTY_ERR)
+        UPDATE_ERR(Errors::NO_ERR);
+    
     STACK_CHECK(stk);
 
-    Errors stackReallocErr = Errors::NO_ERR;
+    uint64_t stackReallocErr = 0;
     if (StackIsFull(stk)) stackReallocErr = StackRealloc(stk, true);
 
     IF_ERR_RETURN(stackReallocErr);
@@ -210,19 +213,22 @@ Errors StackPush(StackType* stk, ElemType val)
 
     STACK_CHECK(stk);
 
-    return Errors::NO_ERR;
+    return 0;
 }
 
-Errors StackPop(StackType* stk, ElemType* retVal)
+uint64_t StackPop(StackType* stk, ElemType* retVal)
 {
     assert(stk);
 
     STACK_CHECK(stk);
+
+    uint64_t errors = 0;
     
     if (StackIsEmpty(stk))
     { 
-        HANDLE_ERR(Errors::STACK_EMPTY_ERR);
-        return     Errors::STACK_EMPTY_ERR;
+        errors = AddError(errors, Errors::STACK_EMPTY_ERR);
+                       HANDLE_ERR(Errors::STACK_EMPTY_ERR);
+        return errors;
     }
 
     --stk->size;
@@ -234,7 +240,7 @@ Errors StackPop(StackType* stk, ElemType* retVal)
 
     if (StackIsTooBig(stk))
     {
-        Errors stackReallocErr = StackRealloc(stk, false);
+        uint64_t stackReallocErr = StackRealloc(stk, false);
 
         STACK_CHECK(stk);
 
@@ -246,29 +252,31 @@ Errors StackPop(StackType* stk, ElemType* retVal)
 
     STACK_CHECK(stk);
 
-    return Errors::NO_ERR;
+    return 0;
 }
 
-Errors StackVerify(StackType* stk)
+uint64_t StackVerify(StackType* stk)
 {
     assert(stk);
 
+    uint64_t errors = 0;
+
     if (stk->data == nullptr)
     {
-       HANDLE_ERR(Errors::STACK_IS_NULLPTR);
-       return     Errors::STACK_IS_NULLPTR;
+       errors = AddError(errors, Errors::STACK_IS_NULLPTR);
+                      HANDLE_ERR(Errors::STACK_IS_NULLPTR);
     }
 
     if (stk->capacity <= 0)
     {  
-        HANDLE_ERR(Errors::STACK_CAPACITY_OUT_OF_RANGE);
-        return     Errors::STACK_CAPACITY_OUT_OF_RANGE;
+        errors = AddError(errors, Errors::STACK_CAPACITY_OUT_OF_RANGE);
+                       HANDLE_ERR(Errors::STACK_CAPACITY_OUT_OF_RANGE);
     }
 
     if (stk->size > stk->capacity)
     {
-        HANDLE_ERR(Errors::STACK_SIZE_OUT_OF_RANGE);
-        return     Errors::STACK_SIZE_OUT_OF_RANGE;
+        errors = AddError(errors, Errors::STACK_SIZE_OUT_OF_RANGE);
+                       HANDLE_ERR(Errors::STACK_SIZE_OUT_OF_RANGE);
     }
 
     //-----------Canary checking----------
@@ -276,14 +284,14 @@ Errors StackVerify(StackType* stk)
 #ifdef STACK_CANARY_PROTECTION
     if (*(CanaryType*)(GET_FIRST_CANARY_ADR(stk)) != Canary)
     {
-        HANDLE_ERR(Errors::STACK_INVALID_CANARY);
-        return     Errors::STACK_INVALID_CANARY;
+        errors = AddError(errors, Errors::STACK_INVALID_CANARY);
+                       HANDLE_ERR(Errors::STACK_INVALID_CANARY);
     }
 
     if (*(CanaryType*)(GET_SECOND_CANARY_ADR(stk)) != Canary)
     {
-        HANDLE_ERR(Errors::STACK_INVALID_CANARY);
-        return     Errors::STACK_INVALID_CANARY;
+        errors = AddError(errors, Errors::STACK_INVALID_CANARY);
+                       HANDLE_ERR(Errors::STACK_INVALID_CANARY);
     }
 #endif
 
@@ -292,8 +300,8 @@ Errors StackVerify(StackType* stk)
 #ifdef STACK_HASH_PROTECTION
     if (CALC_DATA_HASH(stk) != stk->dataHash)
     {
-        HANDLE_ERR(Errors::STACK_INVALID_DATA_HASH);
-        return     Errors::STACK_INVALID_DATA_HASH;
+        errors = AddError(errors, Errors::STACK_INVALID_DATA_HASH);
+                       HANDLE_ERR(Errors::STACK_INVALID_DATA_HASH);
     }
 
     uint64_t prevStructHash = stk->structHash;
@@ -301,18 +309,17 @@ Errors StackVerify(StackType* stk)
 
     if (prevStructHash != stk->structHash)
     {
-        HANDLE_ERR(Errors::STACK_INVALID_STRUCT_HASH);
+        errors = AddError(errors, Errors::STACK_INVALID_STRUCT_HASH);
+                       HANDLE_ERR(Errors::STACK_INVALID_STRUCT_HASH);
 
         stk->structHash = prevStructHash;
-
-        return Errors::STACK_INVALID_STRUCT_HASH;
     }
 #endif
 
-    return Errors::NO_ERR;
+    return errors;
 }
 
-Errors StackDump(StackType* stk, const char* const fileName, 
+void StackDump(StackType* stk, const char* const fileName, 
                                  const char* const funcName,
                                  const int lineNumber)
 {
@@ -374,11 +381,9 @@ Errors StackDump(StackType* stk, const char* const fileName,
     LOG("\t}\n}\n");
 
     LOG_END();
-
-    return Errors::NO_ERR;
 }
 
-Errors StackRealloc(StackType* stk, bool increase)
+uint64_t StackRealloc(StackType* stk, bool increase)
 {
     assert(stk);
 
@@ -403,7 +408,7 @@ Errors StackRealloc(StackType* stk, bool increase)
 
         STACK_CHECK(stk);
 
-        return Errors::MEMORY_ALLOCATION_ERR;
+        return 0;
     }
 
     stk->data = tmpStack;
@@ -419,7 +424,7 @@ Errors StackRealloc(StackType* stk, bool increase)
 
     STACK_CHECK(stk);
 
-    return Errors::NO_ERR;
+    return 0;
 }
 
 static inline bool StackIsFull(StackType* stk)
@@ -449,7 +454,7 @@ return (ElemType*)((char*)data + times * (long long)moveSz);
 }
 
 // NO stack check because doesn't fill hashes
-static Errors StackDataFill(StackType* const stk)
+static void StackDataFill(StackType* const stk)
 {
     assert(stk);
     assert(stk->data);
@@ -467,8 +472,6 @@ static Errors StackDataFill(StackType* const stk)
     // No stack check because doesn't fill hashes
 
     stk->data = GET_FIRST_CANARY_ADR(stk);
-
-    return Errors::NO_ERR;
 }
 
 // no STACK_CHECK because can be used for callocing memory (data could be nullptr at this moment)
@@ -482,6 +485,11 @@ static inline size_t StackGetSzForCalloc(StackType* const stk)
 #else
     return stk->capacity;
 #endif
+}
+
+static inline uint64_t AddError(const uint64_t errors, const Errors error)
+{
+    return (errors | ((uint64_t)1 << (uint64_t)(error)));
 }
 
 #undef STACK_CHECK
