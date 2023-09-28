@@ -35,10 +35,8 @@
 
 #endif
 
-#undef  STACK_DUMP
 ///@brief stack dump that substitutes __FILE__, __func__, __LINE__
 #define STACK_DUMP(STK) StackDump((STK), __FILE__, __func__, __LINE__)
-
 
 ON_HASH
 (
@@ -75,8 +73,9 @@ struct StackType
     )
 };
 
-typedef uint64_t ErrorsType; ///< type for containing errors as bits
+typedef uint64_t StackErrorsType; ///< type for containing errors as bits
 
+/// @brief Errors that can occure while stack is working. 
 enum class StackErrors
 {
     STACK_NO_ERR,
@@ -96,30 +95,30 @@ enum class StackErrors
 /// @param [in]capacity size to reserve for the stack
 /// @param [in]HashFunc hash function for calculating hash
 /// @return errors that occurred
-ErrorsType StackCtor(StackType* const stk, const size_t capacity = 0, 
-                     const HashFuncType HashFunc = MurmurHash); //если типо передаю функцию, то стремно, что нет проверки на ON_HASH, как пихнуть
+StackErrorsType StackCtor(StackType* const stk, const size_t capacity = 0, 
+                     const HashFuncType HashFunc = MurmurHash);
 
 /// @brief Destructor
 /// @param [out]stk stack to destruct
 /// @return errors that occurred
-ErrorsType StackDtor(StackType* const stk);
+StackErrorsType StackDtor(StackType* const stk);
 
 /// @brief Pushing value to the stack
 /// @param [out]stk stack to push in
 /// @param [in]val  value to push
 /// @return errors that occurred
-ErrorsType StackPush(StackType* stk, const ElemType val);
+StackErrorsType StackPush(StackType* stk, const ElemType val);
 
 /// @brief Popping value to the stack
 /// @param [out]stk stack to pop
 /// @param [out]retVal popped value
 /// @return errors that occurred
-ErrorsType StackPop(StackType* stk, ElemType* retVal = nullptr);
+StackErrorsType StackPop(StackType* stk, ElemType* retVal = nullptr);
 
 /// @brief Verifies if stack is used right
 /// @param [in]stk stack to verify
 /// @return StackErrors in stack
-ErrorsType StackVerify(StackType* stk);
+StackErrorsType StackVerify(StackType* stk);
 
 /// @brief Prints stack to log-file 
 /// @param [in]stk stack to print out
@@ -142,17 +141,19 @@ static inline bool StackIsEmpty(const StackType* stk)
 }
 
 /// @brief Adds error as a bit to the errros
-/// @param errors 
-/// @param error 
-/// @return 
-static inline ErrorsType AddError(const ErrorsType errors, const StackErrors error)
+/// @param [in]errors where to add
+/// @param [in]error  what to add
+/// @return errors with added error
+static inline StackErrorsType AddError(const StackErrorsType errors, const StackErrors error)
 {
     if (error == StackErrors::STACK_NO_ERR)
         return errors;
     
-    return (errors | ((ErrorsType)1 << (ErrorsType)(error)));
+    return (errors | ((StackErrorsType)1 << (StackErrorsType)(error)));
 }
 
+/// @brief Prints stack error to log file
+/// @param [in]error error to print
 void StackPrintError(StackErrors error);
 
 #endif // STACK_H
