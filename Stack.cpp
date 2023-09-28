@@ -7,69 +7,9 @@
 #include "Log.h"
 #include "HashFuncs.h"
 
-//--------CANARY PROTECTION----------
-
-#undef CANARY_CTOR
-#undef GET_AFTER_FIRST_CANARY_ADR
-#undef GET_FIRST_CANARY_ADR
-#undef GET_SECOND_CANARY_ADR
-#ifdef STACK_CANARY_PROTECTION
-
-    typedef unsigned long long CanaryType;
-    #define CanaryTypeFormat "%#0llx"
-    const CanaryType Canary = 0xDEADBABE;
-
-    #define CANARY_CTOR(STORAGE)                        \
-    do                                                  \
-    {                                                   \
-        assert(STORAGE);                                \
-        CanaryType* strg = (CanaryType*) (STORAGE);     \
-                                                        \
-        *strg = Canary;                                 \
-    } while(0)
-
-    const size_t Aligning = 8;
-    #define GET_AFTER_FIRST_CANARY_ADR(STK) MovePtr((STK)->data, sizeof(CanaryType), 1)
-    #define GET_FIRST_CANARY_ADR(STK) MovePtr((STK)->data, sizeof(CanaryType), -1)
-    #define GET_SECOND_CANARY_ADR(STK) (char*)((STK)->data + (STK)->capacity) +  \
-                                                Aligning - (STK->capacity * sizeof(ElemType)) % Aligning
-
-#else
-    
-    #define CANARY_CTOR
-
-    #define GET_AFTER_FIRST_CANARY_ADR(STK)  (STK)->data
-    #define GET_FIRST_CANARY_ADR(STK)  (STK)->data
-    #define GET_SECOND_CANARY_ADR(STK) (STK)->data
-
-#endif
-
-//-----------HASH PROTECTION---------------
-
-#undef UPDATE_DATA_HASH
-#ifdef STACK_HASH_PROTECTION
-
-    #define CALC_DATA_HASH(STK) MurmurHash((STK)->data, (STK)->capacity * sizeof(ElemType))
-    #define UPDATE_DATA_HASH(STK) (STK)->dataHash = CALC_DATA_HASH(STK)
-    
-    #define UPDATE_STRUCT_HASH(STK)                             \
-    do                                                          \
-    {                                                           \
-        (STK)->structHash = 0;                                  \
-        (STK)->structHash = MurmurHash((STK), sizeof(*STK));    \
-    } while (0);
-    
-#else
-
-    #define CALC_DATA_HASH(STK)           
-    #define UPDATE_DATA_HASH(STK)   
-
-    #define UPDATE_STRUCT_HASH(STK) 
-#endif
-
 //----------static functions------------
 
-static uint64_t StackRealloc(StackType* stk, bool increase);
+static ErrorsType StackRealloc(StackType* stk, bool increase);
 
 static inline ElemType* MovePtr(ElemType* const data, const size_t moveSz, const int times);
 
@@ -81,7 +21,67 @@ static inline bool StackIsFull(StackType* stk);
 
 static inline bool StackIsTooBig(StackType* stk);
 
-static inline uint64_t AddError(const uint64_t errors, const Errors error);
+//--------CANARY PROTECTION----------
+
+#undef CANARY_CTOR
+#undef GetAfterFirstCanaryAdr
+#undef GetFirstCanaryAdr
+#undef GetSecondCanaryAdr
+#ifdef STACK_CANARY_PROTECTION
+
+    #define CanaryTypeFormat "%#0llx"
+    const CanaryType Canary = 0xDEADBABE;
+
+    const size_t Aligning = 8;
+
+    static inline void CanaryCtor(void* storage)
+    {
+        assert(storage);
+        CanaryType* strg = (CanaryType*) (storage);
+
+        *strg = Canary;
+    }
+
+    static inline ElemType* GetAfterFirstCanaryAdr(const StackType* const stk)
+    {
+        return MovePtr(stk->data, sizeof(CanaryType), 1);
+    }
+
+    static inline ElemType* GetFirstCanaryAdr(const StackType* const stk)
+    {
+        return MovePtr(stk->data, sizeof(CanaryType), -1);
+    }
+
+    static inline ElemType* GetSecondCanaryAdr(const StackType* const stk)
+    {
+        return (ElemType*)(char*)(stk->data + stk->capacity) +
+                           Aligning - (stk->capacity * sizeof(ElemType)) % Aligning;
+    }
+
+#endif
+
+//-----------HASH PROTECTION---------------
+
+#undef UpdateDataHash
+#ifdef STACK_HASH_PROTECTION
+
+    static inline HashType CalcDataHash(const StackType* stk)
+    {
+        return stk->HashFunc(stk->data, stk->capacity * sizeof(ElemType), 0);        
+    }
+
+    static inline void UpdateDataHash(StackType* stk)
+    {
+        stk->dataHash = CalcDataHash(stk);      
+    }
+
+    static inline void UpdateStructHash(StackType* stk)
+    {
+        stk->structHash = 0;                                  
+        stk->structHash = MurmurHash(stk, sizeof(*stk));        
+    }
+    
+#endif
 
 //--------------Consts-----------------
 
@@ -89,39 +89,38 @@ static const size_t STANDARD_CAPACITY = 64;
 
 //---------------
 
-#undef  STACK_DUMP
-#define STACK_DUMP(STK) StackDump((STK), __FILE__, __func__, __LINE__)
-
 #undef  STACK_CHECK
+#undef  STACK_CHECK_NO_RETURN
 #ifndef NDEBUG
 
-    #define STACK_CHECK(stk)                 \
-    do                                       \
-    {                                        \
-        uint64_t stackErr = StackVerify(stk);\
-                                             \
-        if (stackErr != 0)                   \
-        {                                    \
-            STACK_DUMP(stk);                 \
-            return stackErr;                 \
-        }                                    \
+    #define STACK_CHECK(stk)                    \
+    do                                          \
+    {                                           \
+        ErrorsType stackErr = StackVerify(stk); \
+                                                \
+        if (stackErr != 0)                      \
+        {                                       \
+            STACK_DUMP(stk);                    \
+            return stackErr;                    \
+        }                                       \
     } while (0)
 
-    #define STACK_CHECK_NO_RETURN(stk)       \
-    do                                       \
-    {                                        \
-        uint64_t stackErr = StackVerify(stk);\
-                                             \
-        if (stackErr != 0)                   \
-        {                                    \
-            STACK_DUMP(stk);                 \
-        }                                    \
+    #define STACK_CHECK_NO_RETURN(stk)         \
+    do                                         \
+    {                                          \
+        ErrorsType stackErr = StackVerify(stk);\
+                                               \
+        if (stackErr != 0)                     \
+        {                                      \
+            STACK_DUMP(stk);                   \
+        }                                      \
     } while (0)
 
 #else
 
-    #define STACK_CHECK(stk) ;
-    #define STACK_CHECK_NO_RETURN(stk) ;
+    #define STACK_CHECK(stk)           
+    #define STACK_CHECK_NO_RETURN(stk) 
+
 #endif
 
 //---------------
@@ -136,11 +135,21 @@ do                                      \
 
 //---------------
 
-uint64_t StackCtor(StackType* const stk, const size_t capacity)
+ErrorsType StackCtor(StackType* const stk, const size_t capacity, 
+                     const HashFuncType HashFunc)
 {
     assert(stk);
 
-    uint64_t errors = 0;
+    stk->HashFunc = HashFunc;
+
+    //--------SET STRUCT CANARY-------
+    ON_CANARY
+    (
+        stk->structCanaryLeft  = Canary;
+        stk->structCanaryRight = Canary;
+    )
+
+    ErrorsType errors = 0;
     stk->size = 0;
 
     if (capacity > 0) stk->capacity = capacity;
@@ -152,7 +161,7 @@ uint64_t StackCtor(StackType* const stk, const size_t capacity)
 
     if (stk->data == nullptr)
     {
-        HANDLE_ERR(Errors::MEMORY_ALLOCATION_ERR);  
+                     HANDLE_ERR(Errors::MEMORY_ALLOCATION_ERR);  
         return AddError(errors, Errors::MEMORY_ALLOCATION_ERR);   
     }
 
@@ -160,23 +169,37 @@ uint64_t StackCtor(StackType* const stk, const size_t capacity)
 
     StackDataFill(stk);
 
-    stk->data = GET_AFTER_FIRST_CANARY_ADR(stk);
+    ON_CANARY
+    (
+        stk->data = GetAfterFirstCanaryAdr(stk);
+    )
 
-    UPDATE_DATA_HASH(stk);
-    UPDATE_STRUCT_HASH(stk);
+    ON_HASH
+    (
+        UpdateDataHash(stk);
+        UpdateStructHash(stk);
+    )
 
     STACK_CHECK(stk);
 
     return errors;
 }
 
-uint64_t StackDtor(StackType* const stk)
+ErrorsType StackDtor(StackType* const stk)
 {
     assert(stk);
 
     STACK_CHECK(stk);
 
-    stk->data = GET_FIRST_CANARY_ADR(stk);
+    for (size_t i = 0; i < stk->size; ++i)
+    {
+        stk->data[i] = POISON;
+    }
+
+    ON_CANARY
+    (
+        stk->data = GetFirstCanaryAdr(stk);
+    )
 
     free(stk->data);
     stk->data = nullptr;
@@ -184,45 +207,52 @@ uint64_t StackDtor(StackType* const stk)
     stk->size     = 0;
     stk->capacity = 0;
 
-#ifdef STACK_HASH_PROTECTION
-    stk->dataHash = 0;
-#endif
+    ON_HASH
+    (
+        stk->dataHash = 0;
+    )
+
+    ON_CANARY
+    (
+        stk->structCanaryLeft  = 0;
+        stk->structCanaryRight = 0;
+    )
 
     return 0;
 }
 
-uint64_t StackPush(StackType* stk, ElemType val)
+ErrorsType StackPush(StackType* stk, const ElemType val)
 {
     assert(stk);
     assert(isfinite(val));
-
-    if (GetError() == Errors::STACK_EMPTY_ERR)
-        UPDATE_ERR(Errors::NO_ERR);
     
     STACK_CHECK(stk);
 
-    uint64_t stackReallocErr = 0;
+    ErrorsType stackReallocErr = 0;
     if (StackIsFull(stk)) stackReallocErr = StackRealloc(stk, true);
 
     IF_ERR_RETURN(stackReallocErr);
 
     stk->data[stk->size++] = val;
 
-    UPDATE_DATA_HASH(stk);
-    UPDATE_STRUCT_HASH(stk);
+    ON_HASH
+    (
+        UpdateDataHash(stk);
+        UpdateStructHash(stk);
+    )
 
     STACK_CHECK(stk);
 
     return 0;
 }
 
-uint64_t StackPop(StackType* stk, ElemType* retVal)
+ErrorsType StackPop(StackType* stk, ElemType* retVal)
 {
     assert(stk);
 
     STACK_CHECK(stk);
 
-    uint64_t errors = 0;
+    ErrorsType errors = 0;
     
     if (StackIsEmpty(stk))
     { 
@@ -235,19 +265,25 @@ uint64_t StackPop(StackType* stk, ElemType* retVal)
     if (retVal) *retVal = stk->data[--stk->size];
     stk->data[stk->size] = POISON;
 
-    UPDATE_DATA_HASH(stk);
-    UPDATE_STRUCT_HASH(stk);
+    ON_HASH
+    (
+        UpdateDataHash(stk);
+        UpdateStructHash(stk);
+    )
 
     if (StackIsTooBig(stk))
     {
-        uint64_t stackReallocErr = StackRealloc(stk, false);
+        ErrorsType stackReallocErr = StackRealloc(stk, false);
 
         STACK_CHECK(stk);
 
         IF_ERR_RETURN(stackReallocErr);
 
-        UPDATE_DATA_HASH(stk);
-        UPDATE_STRUCT_HASH(stk);
+        ON_HASH
+        (
+            UpdateDataHash(stk);
+            UpdateStructHash(stk);
+        )
     }
 
     STACK_CHECK(stk);
@@ -255,11 +291,11 @@ uint64_t StackPop(StackType* stk, ElemType* retVal)
     return 0;
 }
 
-uint64_t StackVerify(StackType* stk)
+ErrorsType StackVerify(StackType* stk)
 {
     assert(stk);
 
-    uint64_t errors = 0;
+    ErrorsType errors = 0;
 
     if (stk->data == nullptr)
     {
@@ -281,47 +317,61 @@ uint64_t StackVerify(StackType* stk)
 
     //-----------Canary checking----------
 
-#ifdef STACK_CANARY_PROTECTION
-    if (*(CanaryType*)(GET_FIRST_CANARY_ADR(stk)) != Canary)
-    {
-        errors = AddError(errors, Errors::STACK_INVALID_CANARY);
-                       HANDLE_ERR(Errors::STACK_INVALID_CANARY);
-    }
+    ON_CANARY
+    (
+        if (*(CanaryType*)(GetFirstCanaryAdr(stk)) != Canary)
+        {
+            errors = AddError(errors, Errors::STACK_INVALID_CANARY);
+                        HANDLE_ERR(Errors::STACK_INVALID_CANARY);
+        }
 
-    if (*(CanaryType*)(GET_SECOND_CANARY_ADR(stk)) != Canary)
-    {
-        errors = AddError(errors, Errors::STACK_INVALID_CANARY);
-                       HANDLE_ERR(Errors::STACK_INVALID_CANARY);
-    }
-#endif
+        if (*(CanaryType*)(GetSecondCanaryAdr(stk)) != Canary)
+        {
+            errors = AddError(errors, Errors::STACK_INVALID_CANARY);
+                        HANDLE_ERR(Errors::STACK_INVALID_CANARY);
+        }
+
+        if (stk->structCanaryLeft != Canary)
+        {
+            errors = AddError(errors, Errors::STACK_INVALID_CANARY);
+                           HANDLE_ERR(Errors::STACK_INVALID_CANARY);
+        }
+
+        if (stk->structCanaryRight != Canary)
+        {
+            errors = AddError(errors, Errors::STACK_INVALID_CANARY);
+                           HANDLE_ERR(Errors::STACK_INVALID_CANARY);
+        }
+    )
 
     //------------Hash checking----------
 
-#ifdef STACK_HASH_PROTECTION
-    if (CALC_DATA_HASH(stk) != stk->dataHash)
-    {
-        errors = AddError(errors, Errors::STACK_INVALID_DATA_HASH);
-                       HANDLE_ERR(Errors::STACK_INVALID_DATA_HASH);
-    }
+    ON_HASH
+    (
+        if (CalcDataHash(stk) != stk->dataHash)
+        {
+            errors = AddError(errors, Errors::STACK_INVALID_DATA_HASH);
+                           HANDLE_ERR(Errors::STACK_INVALID_DATA_HASH);
+        }
 
-    uint64_t prevStructHash = stk->structHash;
-    UPDATE_STRUCT_HASH(stk);
+        ErrorsType prevStructHash = stk->structHash;
+        UpdateStructHash(stk);
 
-    if (prevStructHash != stk->structHash)
-    {
-        errors = AddError(errors, Errors::STACK_INVALID_STRUCT_HASH);
-                       HANDLE_ERR(Errors::STACK_INVALID_STRUCT_HASH);
+        if (prevStructHash != stk->structHash)
+        {
+            errors = AddError(errors, Errors::STACK_INVALID_STRUCT_HASH);
+                           HANDLE_ERR(Errors::STACK_INVALID_STRUCT_HASH);
 
-        stk->structHash = prevStructHash;
-    }
-#endif
+            stk->structHash = prevStructHash;
+        }
+    )
 
     return errors;
 }
 
-void StackDump(StackType* stk, const char* const fileName, 
-                                 const char* const funcName,
-                                 const int lineNumber)
+void StackDump(const StackType* stk, const char* const fileName, 
+                                     const char* const funcName,
+                                     const int lineNumber)
 {
     assert(stk);
     assert(fileName);
@@ -335,28 +385,31 @@ void StackDump(StackType* stk, const char* const fileName,
     LOG("\tStk capacity: %zu, \n"
         "\tStk size    : %zu,\n",
         stk->capacity, stk->size);
+    
+    ON_CANARY
+    (
+        LOG("\tLeft struct canary : " CanaryTypeFormat ",\n", 
+            stk->structCanaryLeft);
+        LOG("\tRight struct canary: " CanaryTypeFormat ",\n", 
+            stk->structCanaryRight);
 
-#ifdef STACK_CANARY_PROTECTION
-    LOG("\tLeft canary : " CanaryTypeFormat ",\n", 
-        *(CanaryType*)(GET_FIRST_CANARY_ADR(stk)));
-    LOG("\tRight canary: " CanaryTypeFormat ",\n", 
-        *(CanaryType*)(GET_SECOND_CANARY_ADR(stk)));
-#endif
+        LOG("\tLeft data canary : " CanaryTypeFormat ",\n", 
+            *(CanaryType*)(GetFirstCanaryAdr(stk)));
+        LOG("\tRight data canary: " CanaryTypeFormat ",\n", 
+            *(CanaryType*)(GetSecondCanaryAdr(stk)));
+    )
 
-#ifdef STACK_HASH_PROTECTION
-    LOG("\tData hash  : %llu\n", stk->dataHash);
-    LOG("\tStruct hash: %llu\n", stk->structHash);
-#endif
+    ON_HASH
+    (
+        LOG("\tData hash  : %llu\n", stk->dataHash);
+        LOG("\tStruct hash: %llu\n", stk->structHash);
+    )
 
     LOG("\tdata data[%p]\n\t{\n", stk->data);
 
     if (stk->data != nullptr)
     {
-    #undef  MIN  //чет идейно этот мин не нравится
-    #define MIN(X, Y) ((X) < (Y) ? X : Y)
-
-        //чет MIN здесь прям не оч надо чет с этим сделать  
-        for (size_t i = 0; i < MIN(stk->size, stk->capacity); ++i)
+        for (size_t i = 0; i < (stk->size < stk->capacity ? stk->size : stk->capacity); ++i)
         {
             LOG("\t\t*[%zu] = " ElemTypeFormat, i, stk->data[i]);
 
@@ -365,7 +418,6 @@ void StackDump(StackType* stk, const char* const fileName,
             LOG("\n");
         }
 
-    #undef MIN
         LOG("\t\tNot used values:\n");
 
         for(size_t i = stk->size; i < stk->capacity; ++i)
@@ -383,7 +435,7 @@ void StackDump(StackType* stk, const char* const fileName,
     LOG_END();
 }
 
-uint64_t StackRealloc(StackType* stk, bool increase)
+ErrorsType StackRealloc(StackType* stk, bool increase)
 {
     assert(stk);
 
@@ -395,7 +447,13 @@ uint64_t StackRealloc(StackType* stk, bool increase)
     if (!increase) 
         FillArray(stk->data + stk->capacity, stk->data + stk->size, POISON);
 
-    ElemType* tmpStack = (ElemType*) realloc(GET_FIRST_CANARY_ADR(stk), 
+    //--------Moves data to the first canary-------
+    ON_CANARY
+    (
+        stk->data = GetFirstCanaryAdr(stk);
+    )
+
+    ElemType* tmpStack = (ElemType*) realloc(stk->data, 
                                              StackGetSzForCalloc(stk) * sizeof(*stk->data));
 
     if (tmpStack == nullptr)
@@ -414,13 +472,19 @@ uint64_t StackRealloc(StackType* stk, bool increase)
     stk->data = tmpStack;
 
     // -------Moving forward after reallocing-------
-    stk->data = GET_AFTER_FIRST_CANARY_ADR(stk);
+    ON_CANARY
+    (
+        stk->data = GetAfterFirstCanaryAdr(stk);
+    )
 
     if (increase) 
         FillArray(stk->data + stk->size, stk->data + stk->capacity, POISON);
 
     // -------Putting canary at the end-----------
-    CANARY_CTOR(GET_SECOND_CANARY_ADR(stk));
+    ON_CANARY
+    (
+        CanaryCtor(GetSecondCanaryAdr(stk));
+    )
 
     STACK_CHECK(stk);
 
@@ -431,7 +495,7 @@ static inline bool StackIsFull(StackType* stk)
 {
     assert(stk);
 
-    //STACK_CHECK_NO_RETURN(stk);
+    STACK_CHECK_NO_RETURN(stk);
 
     return stk->size >= stk->capacity;
 }
@@ -440,7 +504,7 @@ static inline bool StackIsTooBig(StackType* stk)
 {
     assert(stk);
 
-    //STACK_CHECK_NO_RETURN(stk);
+    STACK_CHECK_NO_RETURN(stk);
 
     return (stk->size * 4 <= stk->capacity) & (stk->capacity > STANDARD_CAPACITY);
 }
@@ -462,16 +526,24 @@ static void StackDataFill(StackType* const stk)
 
     // NO stack check because called to fill not ok stack
 
-    CANARY_CTOR(stk->data);
-    stk->data = GET_AFTER_FIRST_CANARY_ADR(stk);
+    ON_CANARY
+    (
+        CanaryCtor(stk->data);
+        stk->data = GetAfterFirstCanaryAdr(stk);
+    )
 
     FillArray(stk->data, stk->data + stk->capacity, POISON);
-    GET_AFTER_FIRST_CANARY_ADR(stk);
-    CANARY_CTOR(GET_SECOND_CANARY_ADR(stk));
+
+    ON_CANARY
+    (
+        GetAfterFirstCanaryAdr(stk);
+        CanaryCtor(GetSecondCanaryAdr(stk));
+        stk->data = GetFirstCanaryAdr(stk);
+    )
+
+    stk->data = GetFirstCanaryAdr(stk);
 
     // No stack check because doesn't fill hashes
-
-    stk->data = GET_FIRST_CANARY_ADR(stk);
 }
 
 // no STACK_CHECK because can be used for callocing memory (data could be nullptr at this moment)
@@ -480,20 +552,16 @@ static inline size_t StackGetSzForCalloc(StackType* const stk)
     assert(stk);
     assert(stk->capacity > 0);
 
-#ifdef STACK_CANARY_PROTECTION
-    return stk->capacity + 3 * sizeof(CanaryType) / sizeof(*stk->data);
-#else
-    return stk->capacity;
-#endif
-}
+    ON_CANARY
+    (
+        return stk->capacity + 3 * sizeof(CanaryType) / sizeof(*stk->data);
+    )
 
-static inline uint64_t AddError(const uint64_t errors, const Errors error)
-{
-    return (errors | ((uint64_t)1 << (uint64_t)(error)));
+    return stk->capacity;
 }
 
 #undef STACK_CHECK
 #undef IF_ERR_RETURN
-#undef GET_AFTER_FIRST_CANARY_ADR
-#undef GET_FIRST_CANARY_ADR
-#undef GET_SECOND_CANARY_ADR
+#undef GetAfterFirstCanaryAdr
+#undef GetFirstCanaryAdr
+#undef GetSecondCanaryAdr
