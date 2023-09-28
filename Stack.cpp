@@ -153,7 +153,7 @@ StackErrorsType StackCtor(StackType* const stk, const size_t capacity,
 
     if (stk->data == nullptr)
     {
-        StackPrintError(StackErrors::STACK_MEMORY_ALLOCATION_ERROR);  
+                StackPrintError(StackErrors::STACK_MEMORY_ALLOCATION_ERROR);  
         return AddError(errors, StackErrors::STACK_MEMORY_ALLOCATION_ERROR);   
     }
 
@@ -249,7 +249,7 @@ StackErrorsType StackPop(StackType* stk, ElemType* retVal)
     if (StackIsEmpty(stk))
     { 
         errors = AddError(errors, StackErrors::STACK_EMPTY_ERR);
-                       StackPrintError(StackErrors::STACK_EMPTY_ERR);
+                  StackPrintError(StackErrors::STACK_EMPTY_ERR);
         return errors;
     }
 
@@ -292,19 +292,19 @@ StackErrorsType StackVerify(StackType* stk)
     if (stk->data == nullptr)
     {
        errors = AddError(errors, StackErrors::STACK_IS_NULLPTR);
-                      StackPrintError(StackErrors::STACK_IS_NULLPTR);
+                 StackPrintError(StackErrors::STACK_IS_NULLPTR);
     }
 
     if (stk->capacity <= 0)
     {  
         errors = AddError(errors, StackErrors::STACK_CAPACITY_OUT_OF_RANGE);
-                       StackPrintError(StackErrors::STACK_CAPACITY_OUT_OF_RANGE);
+                  StackPrintError(StackErrors::STACK_CAPACITY_OUT_OF_RANGE);
     }
 
     if (stk->size > stk->capacity)
     {
         errors = AddError(errors, StackErrors::STACK_SIZE_OUT_OF_RANGE);
-                       StackPrintError(StackErrors::STACK_SIZE_OUT_OF_RANGE);
+                  StackPrintError(StackErrors::STACK_SIZE_OUT_OF_RANGE);
     }
 
     //-----------Canary checking----------
@@ -314,25 +314,25 @@ StackErrorsType StackVerify(StackType* stk)
         if (*(CanaryType*)(GetFirstCanaryAdr(stk)) != Canary)
         {
             errors = AddError(errors, StackErrors::STACK_INVALID_CANARY);
-                        StackPrintError(StackErrors::STACK_INVALID_CANARY);
+                      StackPrintError(StackErrors::STACK_INVALID_CANARY);
         }
 
         if (*(CanaryType*)(GetSecondCanaryAdr(stk)) != Canary)
         {
             errors = AddError(errors, StackErrors::STACK_INVALID_CANARY);
-                        StackPrintError(StackErrors::STACK_INVALID_CANARY);
+                      StackPrintError(StackErrors::STACK_INVALID_CANARY);
         }
 
         if (stk->structCanaryLeft != Canary)
         {
             errors = AddError(errors, StackErrors::STACK_INVALID_CANARY);
-                           StackPrintError(StackErrors::STACK_INVALID_CANARY);
+                      StackPrintError(StackErrors::STACK_INVALID_CANARY);
         }
 
         if (stk->structCanaryRight != Canary)
         {
             errors = AddError(errors, StackErrors::STACK_INVALID_CANARY);
-                           StackPrintError(StackErrors::STACK_INVALID_CANARY);
+                      StackPrintError(StackErrors::STACK_INVALID_CANARY);
         }
     )
 
@@ -343,7 +343,7 @@ StackErrorsType StackVerify(StackType* stk)
         if (CalcDataHash(stk) != stk->dataHash)
         {
             errors = AddError(errors, StackErrors::STACK_INVALID_DATA_HASH);
-                           StackPrintError(StackErrors::STACK_INVALID_DATA_HASH);
+                      StackPrintError(StackErrors::STACK_INVALID_DATA_HASH);
         }
 
         StackErrorsType prevStructHash = stk->structHash;
@@ -352,7 +352,7 @@ StackErrorsType StackVerify(StackType* stk)
         if (prevStructHash != stk->structHash)
         {
             errors = AddError(errors, StackErrors::STACK_INVALID_STRUCT_HASH);
-                           StackPrintError(StackErrors::STACK_INVALID_STRUCT_HASH);
+                      StackPrintError(StackErrors::STACK_INVALID_STRUCT_HASH);
 
             stk->structHash = prevStructHash;
         }
