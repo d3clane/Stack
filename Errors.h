@@ -30,31 +30,23 @@ enum class Errors
     STACK_INVALID_STRUCT_HASH
 };
 
+typedef uint64_t ErrorsType; ///< type for containing errors as bits
+
 //-----------------------------------------------------------------------------------------------
 
+
+    /// \brief Contains info about errors - File with error, line with error, error code. 
+    /// \warning Have to be updated with UPDATE_ERR() only
+struct ErrorInfoType 
+{
+    Errors error;              ///< error code
+
 #ifndef NDEBUG
-
-    /// \brief Contains info about errors - File with error, line with error, error code. 
-    /// \warning Have to be updated with UPDATE_ERR() only
-    struct ErrorInfoType 
-    {
-        Errors error;              ///< error code
-        const char* fileWithError; ///< __FILE__ (file name with error)
-        const char* funcWithError; ///< __func__ (function name with error)
-        int lineWithError;         ///< __LINE__ (line with error)
-
-    };
-
-#else
-
-    /// \brief Contains info about errors - File with error, line with error, error code. 
-    /// \warning Have to be updated with UPDATE_ERR() only
-    struct ErrorInfoType 
-    {
-        Errors error;              ///< error code
-    };
-
+    const char* fileWithError; ///< __FILE__ (file name with error)
+    const char* funcWithError; ///< __func__ (function name with error)
+    int lineWithError;         ///< __LINE__ (line with error)
 #endif
+};
 
 /// \brief global errorInfo constant with error info
 /// \warning this variable have to be changes only with UPDATE_ERR()
@@ -114,5 +106,17 @@ static inline Errors GetError()
 }
 
 //-----------------------------------------------------------------------------------------------
+
+/// @brief Adds error as a bit to the errros
+/// @param errors 
+/// @param error 
+/// @return 
+static inline ErrorsType AddError(const ErrorsType errors, const Errors error)
+{
+    if (error == Errors::NO_ERR)
+        return errors;
+    
+    return (errors | ((ErrorsType)1 << (ErrorsType)(error)));
+}
 
 #endif // ERRORS_H
