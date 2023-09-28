@@ -11,12 +11,12 @@
 #undef PRINT_ERR
 
 #ifndef NDEBUG
-    #define PRINT_ERR(X) LOG(HTML_RED_HEAD_BEGIN "\n"                                \
+    #define PRINT_ERR(X) Log(HTML_RED_HEAD_BEGIN "\n"                                \
                              X "Error occured in file %s in func %s in line %d\n"    \
                              HTML_HEAD_END "\n",                                     \
                              ErrorInfo.fileWithError, ErrorInfo.funcWithError, ErrorInfo.lineWithError)
 #else
-    #define PRINT_ERR(X) LOG(RED_TEXT(X));
+    #define PRINT_ERR(X) Log(RED_TEXT(X));
 #endif
 
 //---------------
