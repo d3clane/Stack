@@ -1,11 +1,10 @@
 #include <math.h>
-#include <execinfo.h>
+#include <execinfo.h> //TODO: abi::__cxa_demangle()
 #include <string.h>
 
 #include "ArrayFuncs.h"
 #include "Stack.h"
 #include "Log.h"
-#include "HashFuncs.h"
 
 //----------static functions------------
 
@@ -127,12 +126,16 @@ do                                      \
 
 //---------------
 
+#ifdef STACK_HASH_PROTECTION
 StackErrorsType StackCtor(StackType* const stk, const size_t capacity, 
-                     const HashFuncType HashFunc)
+                          const HashFuncType HashFunc)
 {
     assert(stk);
 
-    stk->HashFunc = HashFunc;
+    ON_HASH
+    (
+        stk->HashFunc = HashFunc;
+    )
 
     //--------SET STRUCT CANARY-------
     ON_CANARY
@@ -176,6 +179,48 @@ StackErrorsType StackCtor(StackType* const stk, const size_t capacity,
 
     return errors;
 }
+#else 
+StackErrorsType StackCtor(StackType* const stk, const size_t capacity)
+{
+    assert(stk);
+
+    //--------SET STRUCT CANARY-------
+    ON_CANARY
+    (
+        stk->structCanaryLeft  = Canary;
+        stk->structCanaryRight = Canary;
+    )
+
+    StackErrorsType errors = 0;
+    stk->size = 0;
+
+    if (capacity > 0) stk->capacity = capacity;
+    else              stk->capacity = STANDARD_CAPACITY;
+
+    //----Callocing Memory-------
+
+    stk->data = (ElemType*) calloc(StackGetSizeForCalloc(stk), sizeof(*stk->data));
+
+    if (stk->data == nullptr)
+    {
+                StackPrintError(StackErrors::STACK_MEMORY_ALLOCATION_ERROR);  
+        return AddError(errors, StackErrors::STACK_MEMORY_ALLOCATION_ERROR);   
+    }
+
+    //-----------------------
+
+    StackDataFill(stk);
+
+    ON_CANARY
+    (
+        stk->data = GetAfterFirstCanaryAdr(stk);
+    )
+
+    STACK_CHECK(stk);
+
+    return errors;    
+}
+#endif
 
 StackErrorsType StackDtor(StackType* const stk)
 {
@@ -216,7 +261,6 @@ StackErrorsType StackDtor(StackType* const stk)
 StackErrorsType StackPush(StackType* stk, const ElemType val)
 {
     assert(stk);
-    assert(isfinite(val));
     
     STACK_CHECK(stk);
 

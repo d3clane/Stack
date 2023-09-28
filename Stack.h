@@ -10,9 +10,9 @@
 #include "Types.h"
 #include "HashFuncs.h"
 
-#define STACK_CANARY_PROTECTION
+//#define STACK_CANARY_PROTECTION
 
-#define STACK_HASH_PROTECTION
+//#define STACK_HASH_PROTECTION
 
 #ifdef STACK_CANARY_PROTECTION
 
@@ -90,13 +90,21 @@ enum class StackErrors
     STACK_INVALID_STRUCT_HASH,
 };
 
-/// @brief Constructor
-/// @param [out]stk stack to fill
-/// @param [in]capacity size to reserve for the stack
-/// @param [in]HashFunc hash function for calculating hash
-/// @return errors that occurred
-StackErrorsType StackCtor(StackType* const stk, const size_t capacity = 0, 
-                     const HashFuncType HashFunc = MurmurHash);
+#ifdef STACK_HASH_PROTECTION
+    /// @brief Constructor
+    /// @param [out]stk stack to fill
+    /// @param [in]capacity size to reserve for the stack
+    /// @param [in]HashFunc hash function for calculating hash
+    /// @return errors that occurred
+    StackErrorsType StackCtor(StackType* const stk, const size_t capacity = 0, 
+                        const HashFuncType HashFunc = MurmurHash);
+#else
+    /// @brief Constructor
+    /// @param [out]stk stack to fill
+    /// @param [in]capacity size to reserve for the stack
+    /// @return errors that occurred
+    StackErrorsType StackCtor(StackType* const stk, const size_t capacity = 0);
+#endif
 
 /// @brief Destructor
 /// @param [out]stk stack to destruct
