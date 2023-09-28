@@ -13,7 +13,7 @@ static ErrorsType StackRealloc(StackType* stk, bool increase);
 
 static inline ElemType* MovePtr(ElemType* const data, const size_t moveSz, const int times);
 
-static inline size_t StackGetSzForCalloc(StackType* const stk);
+static inline size_t StackGetSizeForCalloc(StackType* const stk);
 
 static void StackDataFill(StackType* const stk);
 
@@ -157,7 +157,7 @@ ErrorsType StackCtor(StackType* const stk, const size_t capacity,
 
     //----Callocing Memory-------
 
-    stk->data = (ElemType*) calloc(StackGetSzForCalloc(stk), sizeof(*stk->data));
+    stk->data = (ElemType*) calloc(StackGetSizeForCalloc(stk), sizeof(*stk->data));
 
     if (stk->data == nullptr)
     {
@@ -454,7 +454,7 @@ ErrorsType StackRealloc(StackType* stk, bool increase)
     )
 
     ElemType* tmpStack = (ElemType*) realloc(stk->data, 
-                                             StackGetSzForCalloc(stk) * sizeof(*stk->data));
+                                             StackGetSizeForCalloc(stk) * sizeof(*stk->data));
 
     if (tmpStack == nullptr)
     {
@@ -544,7 +544,7 @@ static void StackDataFill(StackType* const stk)
 }
 
 // no STACK_CHECK because can be used for callocing memory (data could be nullptr at this moment)
-static inline size_t StackGetSzForCalloc(StackType* const stk)
+static inline size_t StackGetSizeForCalloc(StackType* const stk)
 {
     assert(stk);
     assert(stk->capacity > 0);
@@ -563,13 +563,11 @@ static inline size_t StackGetSzForCalloc(StackType* const stk)
 #undef GetFirstCanaryAdr
 #undef GetSecondCanaryAdr
 
-
 #define PRINT_ERR(X) Log(HTML_RED_HEAD_BEGIN "\n" X "\n" HTML_HEAD_END "\n")
 void StackPrintError(StackErrors error)
 {
     switch(error)
     {
-        
         case StackErrors::STACK_CAPACITY_OUT_OF_RANGE:
             PRINT_ERR("Stack capacity is out of range.\n");
             break;
