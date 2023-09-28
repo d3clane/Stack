@@ -2,7 +2,7 @@
 
 #include "HashFuncs.h"
 
-uint64_t MurmurHash(const void* hashingArr, const size_t length, const uint64_t seed)
+HashType MurmurHash(const void* hashingArr, const size_t length, const uint64_t seed)
 {
     assert(hashingArr);
     assert(length > 0);
