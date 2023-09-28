@@ -20,17 +20,7 @@ enum class Errors
     NO_ERR,
     
     MEMORY_ALLOCATION_ERR,
-    
-    STACK_EMPTY_ERR, 
-    STACK_IS_NULLPTR,
-    STACK_CAPACITY_OUT_OF_RANGE,
-    STACK_SIZE_OUT_OF_RANGE,
-    STACK_INVALID_CANARY, 
-    STACK_INVALID_DATA_HASH,
-    STACK_INVALID_STRUCT_HASH
 };
-
-typedef uint64_t ErrorsType; ///< type for containing errors as bits
 
 //-----------------------------------------------------------------------------------------------
 
@@ -106,17 +96,5 @@ static inline Errors GetError()
 }
 
 //-----------------------------------------------------------------------------------------------
-
-/// @brief Adds error as a bit to the errros
-/// @param errors 
-/// @param error 
-/// @return 
-static inline ErrorsType AddError(const ErrorsType errors, const Errors error)
-{
-    if (error == Errors::NO_ERR)
-        return errors;
-    
-    return (errors | ((ErrorsType)1 << (ErrorsType)(error)));
-}
 
 #endif // ERRORS_H

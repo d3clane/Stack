@@ -10,7 +10,6 @@
 #include "Types.h"
 #include "HashFuncs.h"
 
-
 #define STACK_CANARY_PROTECTION
 
 #define STACK_HASH_PROTECTION
@@ -76,6 +75,22 @@ struct StackType
     )
 };
 
+typedef uint64_t ErrorsType; ///< type for containing errors as bits
+
+enum class StackErrors
+{
+    STACK_NO_ERR,
+
+    STACK_MEMORY_ALLOCATION_ERROR,
+    STACK_EMPTY_ERR, 
+    STACK_IS_NULLPTR,
+    STACK_CAPACITY_OUT_OF_RANGE,
+    STACK_SIZE_OUT_OF_RANGE,
+    STACK_INVALID_CANARY, 
+    STACK_INVALID_DATA_HASH,
+    STACK_INVALID_STRUCT_HASH,
+};
+
 /// @brief Constructor
 /// @param [out]stk stack to fill
 /// @param [in]capacity size to reserve for the stack
@@ -103,7 +118,7 @@ ErrorsType StackPop(StackType* stk, ElemType* retVal = nullptr);
 
 /// @brief Verifies if stack is used right
 /// @param [in]stk stack to verify
-/// @return Errors in stack
+/// @return StackErrors in stack
 ErrorsType StackVerify(StackType* stk);
 
 /// @brief Prints stack to log-file 
@@ -125,5 +140,19 @@ static inline bool StackIsEmpty(const StackType* stk)
     
     return stk->size == 0;
 }
+
+/// @brief Adds error as a bit to the errros
+/// @param errors 
+/// @param error 
+/// @return 
+static inline ErrorsType AddError(const ErrorsType errors, const StackErrors error)
+{
+    if (error == StackErrors::STACK_NO_ERR)
+        return errors;
+    
+    return (errors | ((ErrorsType)1 << (ErrorsType)(error)));
+}
+
+void StackPrintError(StackErrors error);
 
 #endif // STACK_H

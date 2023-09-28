@@ -161,8 +161,8 @@ ErrorsType StackCtor(StackType* const stk, const size_t capacity,
 
     if (stk->data == nullptr)
     {
-                     HANDLE_ERR(Errors::MEMORY_ALLOCATION_ERR);  
-        return AddError(errors, Errors::MEMORY_ALLOCATION_ERR);   
+        StackPrintError(StackErrors::STACK_MEMORY_ALLOCATION_ERROR);  
+        return AddError(errors, StackErrors::STACK_MEMORY_ALLOCATION_ERROR);   
     }
 
     //-----------------------
@@ -256,8 +256,8 @@ ErrorsType StackPop(StackType* stk, ElemType* retVal)
     
     if (StackIsEmpty(stk))
     { 
-        errors = AddError(errors, Errors::STACK_EMPTY_ERR);
-                       HANDLE_ERR(Errors::STACK_EMPTY_ERR);
+        errors = AddError(errors, StackErrors::STACK_EMPTY_ERR);
+                       StackPrintError(StackErrors::STACK_EMPTY_ERR);
         return errors;
     }
 
@@ -299,20 +299,20 @@ ErrorsType StackVerify(StackType* stk)
 
     if (stk->data == nullptr)
     {
-       errors = AddError(errors, Errors::STACK_IS_NULLPTR);
-                      HANDLE_ERR(Errors::STACK_IS_NULLPTR);
+       errors = AddError(errors, StackErrors::STACK_IS_NULLPTR);
+                      StackPrintError(StackErrors::STACK_IS_NULLPTR);
     }
 
     if (stk->capacity <= 0)
     {  
-        errors = AddError(errors, Errors::STACK_CAPACITY_OUT_OF_RANGE);
-                       HANDLE_ERR(Errors::STACK_CAPACITY_OUT_OF_RANGE);
+        errors = AddError(errors, StackErrors::STACK_CAPACITY_OUT_OF_RANGE);
+                       StackPrintError(StackErrors::STACK_CAPACITY_OUT_OF_RANGE);
     }
 
     if (stk->size > stk->capacity)
     {
-        errors = AddError(errors, Errors::STACK_SIZE_OUT_OF_RANGE);
-                       HANDLE_ERR(Errors::STACK_SIZE_OUT_OF_RANGE);
+        errors = AddError(errors, StackErrors::STACK_SIZE_OUT_OF_RANGE);
+                       StackPrintError(StackErrors::STACK_SIZE_OUT_OF_RANGE);
     }
 
     //-----------Canary checking----------
@@ -321,26 +321,26 @@ ErrorsType StackVerify(StackType* stk)
     (
         if (*(CanaryType*)(GetFirstCanaryAdr(stk)) != Canary)
         {
-            errors = AddError(errors, Errors::STACK_INVALID_CANARY);
-                        HANDLE_ERR(Errors::STACK_INVALID_CANARY);
+            errors = AddError(errors, StackErrors::STACK_INVALID_CANARY);
+                        StackPrintError(StackErrors::STACK_INVALID_CANARY);
         }
 
         if (*(CanaryType*)(GetSecondCanaryAdr(stk)) != Canary)
         {
-            errors = AddError(errors, Errors::STACK_INVALID_CANARY);
-                        HANDLE_ERR(Errors::STACK_INVALID_CANARY);
+            errors = AddError(errors, StackErrors::STACK_INVALID_CANARY);
+                        StackPrintError(StackErrors::STACK_INVALID_CANARY);
         }
 
         if (stk->structCanaryLeft != Canary)
         {
-            errors = AddError(errors, Errors::STACK_INVALID_CANARY);
-                           HANDLE_ERR(Errors::STACK_INVALID_CANARY);
+            errors = AddError(errors, StackErrors::STACK_INVALID_CANARY);
+                           StackPrintError(StackErrors::STACK_INVALID_CANARY);
         }
 
         if (stk->structCanaryRight != Canary)
         {
-            errors = AddError(errors, Errors::STACK_INVALID_CANARY);
-                           HANDLE_ERR(Errors::STACK_INVALID_CANARY);
+            errors = AddError(errors, StackErrors::STACK_INVALID_CANARY);
+                           StackPrintError(StackErrors::STACK_INVALID_CANARY);
         }
     )
 
@@ -350,8 +350,8 @@ ErrorsType StackVerify(StackType* stk)
     (
         if (CalcDataHash(stk) != stk->dataHash)
         {
-            errors = AddError(errors, Errors::STACK_INVALID_DATA_HASH);
-                           HANDLE_ERR(Errors::STACK_INVALID_DATA_HASH);
+            errors = AddError(errors, StackErrors::STACK_INVALID_DATA_HASH);
+                           StackPrintError(StackErrors::STACK_INVALID_DATA_HASH);
         }
 
         ErrorsType prevStructHash = stk->structHash;
@@ -359,8 +359,8 @@ ErrorsType StackVerify(StackType* stk)
 
         if (prevStructHash != stk->structHash)
         {
-            errors = AddError(errors, Errors::STACK_INVALID_STRUCT_HASH);
-                           HANDLE_ERR(Errors::STACK_INVALID_STRUCT_HASH);
+            errors = AddError(errors, StackErrors::STACK_INVALID_STRUCT_HASH);
+                           StackPrintError(StackErrors::STACK_INVALID_STRUCT_HASH);
 
             stk->structHash = prevStructHash;
         }
@@ -458,7 +458,7 @@ ErrorsType StackRealloc(StackType* stk, bool increase)
 
     if (tmpStack == nullptr)
     {
-        HANDLE_ERR(Errors::MEMORY_ALLOCATION_ERR);
+        StackPrintError(StackErrors::STACK_MEMORY_ALLOCATION_ERROR);
 
         assert(stk);
         if (increase) stk->capacity >>= 1;
@@ -562,3 +562,41 @@ static inline size_t StackGetSzForCalloc(StackType* const stk)
 #undef GetAfterFirstCanaryAdr
 #undef GetFirstCanaryAdr
 #undef GetSecondCanaryAdr
+
+
+#define PRINT_ERR(X) Log(HTML_RED_HEAD_BEGIN "\n" X "\n" HTML_HEAD_END "\n")
+void StackPrintError(StackErrors error)
+{
+    switch(error)
+    {
+        
+        case StackErrors::STACK_CAPACITY_OUT_OF_RANGE:
+            PRINT_ERR("Stack capacity is out of range.\n");
+            break;
+        case StackErrors::STACK_IS_NULLPTR:
+            PRINT_ERR("Stack is nullptr.\n");
+            break;
+        case StackErrors::STACK_EMPTY_ERR:
+            PRINT_ERR("Trying to pop from empty stack.\n");
+            break;
+        case StackErrors::STACK_SIZE_OUT_OF_RANGE:
+            PRINT_ERR("Stack size is out of range.\n");
+            break;
+        case StackErrors::STACK_MEMORY_ALLOCATION_ERROR:
+            PRINT_ERR("Couldn't allocate more memory for stack.\n");
+            break;
+        case StackErrors::STACK_INVALID_CANARY:
+            PRINT_ERR("Stack canary is invalid.\n");
+            break;
+        case StackErrors::STACK_INVALID_DATA_HASH:
+            PRINT_ERR("Stack data hash is invalid.\n");
+            break;
+        case StackErrors::STACK_INVALID_STRUCT_HASH:
+            PRINT_ERR("Stack struct hash is invalid.\n");
+
+        case StackErrors::STACK_NO_ERR:
+        default:
+            break;
+    }
+}
+#undef PRINT_ERR
