@@ -12,14 +12,6 @@ void FillArray(ElemType* firstBorder, ElemType* secondBorder, const ElemType val
 
     if (firstBorder > secondBorder)
         Swap(&firstBorder, &secondBorder, sizeof(firstBorder));
-        
-    /*if (firstBorder > secondBorder) //TODO: change on Swap function
-    {
-
-        ElemType* tmp = firstBorder;
-                        firstBorder = secondBorder;
-                                      secondBorder = tmp;
-    }*/
 
     for (ElemType* arrIterator = firstBorder; arrIterator < secondBorder; ++arrIterator)
         *arrIterator = value;
