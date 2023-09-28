@@ -1,10 +1,17 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <stdarg.h>
 
 #include "Log.h"
 
-FILE* LOG_FILE;
+static FILE* LOG_FILE;
+
+static inline void PrintSeparator()
+{
+    fprintf(LOG_FILE,
+            "\n\n---------------------------------------------------------------------------\n\n");
+}
 
 void LogOpen(const char* argv0)
 {
@@ -41,4 +48,35 @@ void LogClose()
 
     fclose(LOG_FILE);
     LOG_FILE = nullptr;
+}
+
+void LogBegin(const char* fileName, const char* funcName, const int line)
+{
+    time_t timeInSeconds = time(nullptr);                                        
+    fprintf(LOG_FILE, "\n-----------------------\n\n"                            
+                      HTML_GREEN_HEAD_BEGIN "\n"                                 
+                      "New log called %s"                                        
+                      "Called from file: %s, from function: %s, from line: %d\n" 
+                      HTML_HEAD_END "\n\n\n",                                    
+                      ctime(&timeInSeconds), fileName, funcName, line);      
+}
+
+void Log(const char* format, ...)
+{
+    va_list args = {};
+
+    va_start(args, format);
+    vfprintf(LOG_FILE, format, args);
+    va_end(args);
+}
+
+void LogEnd(const char* fileName, const char* funcName, const int line)
+{
+    time_t timeInSeconds = time(nullptr);                                   
+    fprintf(LOG_FILE, "\n" HTML_GREEN_HEAD_BEGIN "\n"                       
+                      "Logging ended %s"                                    
+                      "Ended in file: %s, function: %s, line: %d\n"         
+                      HTML_HEAD_END "\n\n"                                  
+                      "-----------------------\n\n\n",                      
+                      ctime(&timeInSeconds), fileName, funcName, line); 
 }
