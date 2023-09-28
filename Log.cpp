@@ -7,11 +7,9 @@
 
 static FILE* LOG_FILE;
 
-static inline void PrintSeparator()
-{
-    fprintf(LOG_FILE,
-            "\n\n---------------------------------------------------------------------------\n\n");
-}
+static inline void PrintSeparator();
+
+static void LogClose();
 
 void LogOpen(const char* argv0)
 {
@@ -32,7 +30,7 @@ void LogOpen(const char* argv0)
     free(newString);
 }
 
-void LogClose()
+static void LogClose()
 {
     time_t timeInSeconds = time(nullptr);
 
@@ -79,4 +77,10 @@ void LogEnd(const char* fileName, const char* funcName, const int line)
                       HTML_HEAD_END "\n\n"                                  
                       "-----------------------\n\n\n",                      
                       ctime(&timeInSeconds), fileName, funcName, line); 
+}
+
+static inline void PrintSeparator()
+{
+    fprintf(LOG_FILE,
+            "\n\n---------------------------------------------------------------------------\n\n");
 }
