@@ -380,57 +380,57 @@ void StackDump(const StackType* stk, const char* const fileName,
     
     LOG_BEGIN();
 
-    LOG("StackDump was called in file %s, function %s, line %d\n", fileName, funcName, lineNumber);
-    LOG("Stk[%p]\n{\n", stk);
-    LOG("\tStk capacity: %zu, \n"
+    Log("StackDump was called in file %s, function %s, line %d\n", fileName, funcName, lineNumber);
+    Log("Stk[%p]\n{\n", stk);
+    Log("\tStk capacity: %zu, \n"
         "\tStk size    : %zu,\n",
         stk->capacity, stk->size);
     
     ON_CANARY
     (
-        LOG("\tLeft struct canary : " CanaryTypeFormat ",\n", 
+        Log("\tLeft struct canary : " CanaryTypeFormat ",\n", 
             stk->structCanaryLeft);
-        LOG("\tRight struct canary: " CanaryTypeFormat ",\n", 
+        Log("\tRight struct canary: " CanaryTypeFormat ",\n", 
             stk->structCanaryRight);
 
-        LOG("\tLeft data canary : " CanaryTypeFormat ",\n", 
+        Log("\tLeft data canary : " CanaryTypeFormat ",\n", 
             *(CanaryType*)(GetFirstCanaryAdr(stk)));
-        LOG("\tRight data canary: " CanaryTypeFormat ",\n", 
+        Log("\tRight data canary: " CanaryTypeFormat ",\n", 
             *(CanaryType*)(GetSecondCanaryAdr(stk)));
     )
 
     ON_HASH
     (
-        LOG("\tData hash  : %llu\n", stk->dataHash);
-        LOG("\tStruct hash: %llu\n", stk->structHash);
+        Log("\tData hash  : %llu\n", stk->dataHash);
+        Log("\tStruct hash: %llu\n", stk->structHash);
     )
 
-    LOG("\tdata data[%p]\n\t{\n", stk->data);
+    Log("\tdata data[%p]\n\t{\n", stk->data);
 
     if (stk->data != nullptr)
     {
         for (size_t i = 0; i < (stk->size < stk->capacity ? stk->size : stk->capacity); ++i)
         {
-            LOG("\t\t*[%zu] = " ElemTypeFormat, i, stk->data[i]);
+            Log("\t\t*[%zu] = " ElemTypeFormat, i, stk->data[i]);
 
-            if (Equal(&stk->data[i], &POISON)) LOG(" (POISON)");
+            if (Equal(&stk->data[i], &POISON)) Log(" (POISON)");
 
-            LOG("\n");
+            Log("\n");
         }
 
-        LOG("\t\tNot used values:\n");
+        Log("\t\tNot used values:\n");
 
         for(size_t i = stk->size; i < stk->capacity; ++i)
         {
-            LOG("\t\t*[%zu] = " ElemTypeFormat, i, stk->data[i]);
+            Log("\t\t*[%zu] = " ElemTypeFormat, i, stk->data[i]);
             
-            if (Equal(&stk->data[i], &POISON)) LOG(" (POISON)");
+            if (Equal(&stk->data[i], &POISON)) Log(" (POISON)");
 
-            LOG("\n");
+            Log("\n");
         }
     }
 
-    LOG("\t}\n}\n");
+    Log("\t}\n}\n");
 
     LOG_END();
 }
@@ -536,12 +536,9 @@ static void StackDataFill(StackType* const stk)
 
     ON_CANARY
     (
-        GetAfterFirstCanaryAdr(stk);
         CanaryCtor(GetSecondCanaryAdr(stk));
         stk->data = GetFirstCanaryAdr(stk);
     )
-
-    stk->data = GetFirstCanaryAdr(stk);
 
     // No stack check because doesn't fill hashes
 }
