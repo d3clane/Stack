@@ -21,7 +21,33 @@
 
 //---------------
 
-ErrorInfoType ErrorInfo = {.error = Errors::NO_ERR, .fileWithError = "NO_ERRORS.txt", .lineWithError = -1};
+static ErrorInfoType ErrorInfo = 
+{
+    .error = Errors::NO_ERR, 
+    .fileWithError = "NO_ERRORS.txt", 
+    .lineWithError = -1
+};
+
+#ifndef NDEBUG
+
+    void UpdateError(Errors error, const char* const fileName, 
+                                const char* const funcName, 
+                                const int lineNumber)
+    {
+        ErrorInfo.fileWithError = fileName;
+        ErrorInfo.lineWithError = lineNumber;
+        ErrorInfo.funcWithError = funcName;
+        ErrorInfo.error = error;
+    }
+
+#else
+
+    void UpdateError(Errors error)
+    {
+        ErrorInfo.error = error;
+    }
+
+#endif
 
 void PrintError()
 {
@@ -37,7 +63,7 @@ void PrintError()
     }
 }
 
-bool IsFatalError()
+bool HasError()
 {
     switch(ErrorInfo.error)
     {
@@ -48,4 +74,9 @@ bool IsFatalError()
         default:
             return true;
     }
+}
+
+Errors GetError()
+{
+    return ErrorInfo.error;
 }

@@ -38,41 +38,42 @@ struct ErrorInfoType
 #endif
 };
 
-/// \brief global errorInfo constant with error info
-/// \warning this variable have to be changes only with UPDATE_ERR()
-extern ErrorInfoType ErrorInfo;
-
 //-----------------------------------------------------------------------------------------------
 
 #ifndef NDEBUG
+
+    /// @brief function for updating error
+    /// @param [in]error error to save
+    /// @param [in]fileName file with error 
+    /// @param [in]funcName function with error
+    /// @param [in]lineNumber line with error
+    void UpdateError(Errors error, const char* const fileName, 
+                                   const char* const funcName, 
+                                   const int lineNumber);
 
     /// \brief updates special struct with errors errorInfo 
     /// \details copyFileName copy of __FILE__ define at the moment macros is called 
     /// \details copyLineNumber __LINE__ define at the moment macros is valled
     /// \param [in]ERROR Errors enum with error occurred in program
-    #define UPDATE_ERR(ERROR)                                             \
-    do                                                                    \
-    {                                                                     \
-        ErrorInfo.fileWithError = __FILE__;                               \
-        ErrorInfo.lineWithError = __LINE__;                               \
-        ErrorInfo.funcWithError = __func__;                               \
-        ErrorInfo.error = ERROR;                                          \
-    } while(0)
-    
-    #define HANDLE_ERR(ERROR)                                             \
-    do                                                                    \
-    {                                                                     \
-        UPDATE_ERR(ERROR);                                                \
-        PrintError();                                                     \
-    } while (0)
+    #define UPDATE_ERR(ERROR) UpdateError((ERROR), __FILE__, __func__, __LINE__)
     
 #else
 
+    void UpdateError(Errors error);
+
     /// \brief updates only error code without debug info
     /// \param [in] ERROR Errors enum with error occurred in program
-    #define UPDATE_ERR(ERROR) ErrorInfo.error = ERROR
-    #define HANDLE_ERR(ERROR)
+    #define UPDATE_ERR(ERROR) UpdateError(error);
+
 #endif
+
+#define HANDLE_ERR(ERROR)                                             \
+do                                                                    \
+{                                                                     \
+    UPDATE_ERR(ERROR);                                                \
+    PrintError();                                                     \
+} while (0)
+
 
 //----------------------------------------------------------------------------------------------
 
@@ -84,16 +85,13 @@ void PrintError();
 
 /// @brief checks if the error in ErrorInfo is fatal.
 /// @returns true if error is fatal and have to leave the program, otherwise false
-bool IsFatalError();
+bool HasError();
 
 //-----------------------------------------------------------------------------------------------
 
 /// @brief returns ErrorInfo.error
 /// @return returns ErrorInfo.error
-static inline Errors GetError()
-{
-    return ErrorInfo.error;
-}
+Errors GetError();
 
 //-----------------------------------------------------------------------------------------------
 
