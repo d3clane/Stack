@@ -37,7 +37,7 @@ static ErrorInfoType ErrorInfo =
         ErrorInfo.fileWithError = fileName;
         ErrorInfo.lineWithError = lineNumber;
         ErrorInfo.funcWithError = funcName;
-        ErrorInfo.error = error;
+        ErrorInfo.error         = error;
     }
 
 #else
