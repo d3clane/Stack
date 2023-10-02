@@ -13,7 +13,6 @@
 
 //-----------------------------------------------------------------------------------------------
 
-//TODO: think about making bits structure and return it
 /// \brief Errors than may occur during the program working. 
 enum class Errors 
 {
@@ -25,8 +24,8 @@ enum class Errors
 //-----------------------------------------------------------------------------------------------
 
 
-    /// \brief Contains info about errors - File with error, line with error, error code. 
-    /// \warning Have to be updated with UPDATE_ERR() only
+/// \brief Contains info about errors - File with error, line with error, error code. 
+/// \warning Have to be updated with UPDATE_ERR() only
 struct ErrorInfoType 
 {
     Errors error;              ///< error code
