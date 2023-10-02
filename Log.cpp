@@ -111,7 +111,7 @@ ssize_t Log(const char* format, ...)
 
     va_start(args, format);
 
-    static const size_t BufSize = 512;
+    static const size_t BufSize = 1024;
     static char buf[BufSize];
 
     size_t numberOfChars = (size_t) vsnprintf(buf, BufSize, format, args);
@@ -119,7 +119,8 @@ ssize_t Log(const char* format, ...)
     va_end(args);
 
     numberOfChars = Min(numberOfChars, BufSize);
-
+    
+    //TODO: abi::__cxa_demangle()
     return write(LOG_FILE, buf, numberOfChars * sizeof(char));
 }
 
