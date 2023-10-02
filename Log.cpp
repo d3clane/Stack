@@ -1,86 +1,147 @@
+#include <assert.h>
+#include <execinfo.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
 #include <stdarg.h>
+#include <unistd.h>
+#include <fcntl.h>
 
 #include "Log.h"
 
-static FILE* LOG_FILE;
+static int LOG_FILE;
 
 static inline void PrintSeparator();
 
 static void LogClose();
 
+static inline size_t Min(size_t a, size_t b)
+{
+    return a < b ? a : b;
+}
+
+static int TryOpenFile(const char* name)
+{
+    char* newString = strdup(name);
+    char* fileName  = strcat(newString, ".log.html");
+
+    LOG_FILE = open(fileName, O_WRONLY | O_APPEND);
+
+    if (LOG_FILE == -1)
+    {
+        creat(fileName, 0666);
+        LOG_FILE = open(fileName, O_WRONLY | O_APPEND);
+    }
+    
+    free(newString);
+
+    return LOG_FILE;
+}
+
 void LogOpen(const char* argv0)
 {
-    char* newString = strdup(argv0);
+    assert(argv0);
+    LOG_FILE = TryOpenFile(argv0);
 
-    LOG_FILE = fopen(strcat(newString, ".log.html"), "a+");
+    if (LOG_FILE == -1)
+        return;
 
     time_t timeInSeconds = time(nullptr);
 
-    fprintf(LOG_FILE, "<pre>\n\n");
-    fprintf(LOG_FILE, HTML_RED_HEAD_BEGIN "\n" 
-                      "Log file was opened by program %s, compiled %s at %s. "
-                      "Opening time: %s"
-                      HTML_HEAD_END "\n",
-                      argv0, __DATE__, __TIME__, ctime(&timeInSeconds));
+    Log("<pre>\n\n");
+
+    Log(HTML_RED_HEAD_BEGIN "\n" 
+        "Log file was opened by program %s, compiled %s at %s. "
+        "Opening time: %s"
+        HTML_HEAD_END "\n", 
+        argv0, __DATE__, __TIME__, ctime(&timeInSeconds));
 
     atexit(LogClose);
-    free(newString);
 }
 
 static void LogClose()
 {
+    if (LOG_FILE == -1)
+        return;
     time_t timeInSeconds = time(nullptr);
 
-    fprintf(LOG_FILE, "\n" HTML_RED_HEAD_BEGIN "\n"
-                      "Log file was closed by program compiled %s at %s. "
-                      "Closing time: %s"
-                      HTML_HEAD_END "\n",
-                      __DATE__, __TIME__, ctime(&timeInSeconds));
+    Log("\n" HTML_RED_HEAD_BEGIN "\n"
+        "Log file was closed by program compiled %s at %s. "
+        "Closing time: %s"
+        HTML_HEAD_END "\n",
+        __DATE__, __TIME__, ctime(&timeInSeconds));
 
     PrintSeparator();
 
-    fprintf(LOG_FILE, "</pre>\n");
+    Log("</pre>\n");
 
-    fclose(LOG_FILE);
-    LOG_FILE = nullptr;
+    close(LOG_FILE);
+    LOG_FILE = -1;
 }
 
 void LogBegin(const char* fileName, const char* funcName, const int line)
 {
-    time_t timeInSeconds = time(nullptr);                                        
-    fprintf(LOG_FILE, "\n-----------------------\n\n"                            
-                      HTML_GREEN_HEAD_BEGIN "\n"                                 
-                      "New log called %s"                                        
-                      "Called from file: %s, from function: %s, from line: %d\n" 
-                      HTML_HEAD_END "\n\n\n",                                    
-                      ctime(&timeInSeconds), fileName, funcName, line);      
+    assert(fileName);
+    assert(funcName);
+
+    if (LOG_FILE == -1)
+        return;
+    time_t timeInSeconds = time(nullptr);     
+
+    Log("\n-----------------------\n\n"                            
+        HTML_GREEN_HEAD_BEGIN "\n"                                 
+        "New log called %s"                                        
+        "Called from file: %s, from function: %s, from line: %d\n" 
+        HTML_HEAD_END "\n\n\n",                                    
+        ctime(&timeInSeconds), fileName, funcName, line);                                 
+
+    // backtrace печатет в начало файла
+    static const size_t buffSize = 128;
+    static void* buffer[buffSize];
+    int numb = backtrace(buffer, buffSize);
+    Log("Functions calling stack on beginning:\n");
+    backtrace_symbols_fd(buffer, numb, LOG_FILE);
 }
 
-void Log(const char* format, ...)
+ssize_t Log(const char* format, ...)
 {
+    assert(format);
+
     va_list args = {};
 
     va_start(args, format);
-    vfprintf(LOG_FILE, format, args);
+
+    static const size_t BufSize = 512;
+    static char buf[BufSize];
+
+    size_t numberOfChars = (size_t) vsnprintf(buf, BufSize, format, args);
+
     va_end(args);
+
+    numberOfChars = Min(numberOfChars, BufSize);
+
+    return write(LOG_FILE, buf, numberOfChars * sizeof(char));
 }
 
 void LogEnd(const char* fileName, const char* funcName, const int line)
 {
-    time_t timeInSeconds = time(nullptr);                                   
-    fprintf(LOG_FILE, "\n" HTML_GREEN_HEAD_BEGIN "\n"                       
-                      "Logging ended %s"                                    
-                      "Ended in file: %s, function: %s, line: %d\n"         
-                      HTML_HEAD_END "\n\n"                                  
-                      "-----------------------\n\n\n",                      
-                      ctime(&timeInSeconds), fileName, funcName, line); 
+    static const size_t buffSize = 128;
+    static void* buffer[buffSize];
+    int numb = backtrace(buffer, buffSize);
+    
+    Log("Functions calling stack on ending:\n");
+    backtrace_symbols_fd(buffer, numb, LOG_FILE);
+
+    time_t timeInSeconds = time(nullptr);  
+    Log("\n" HTML_GREEN_HEAD_BEGIN "\n"                       
+        "Logging ended %s"                                    
+        "Ended in file: %s, function: %s, line: %d\n"         
+        HTML_HEAD_END "\n\n"                                  
+        "-----------------------\n\n\n",                      
+        ctime(&timeInSeconds), fileName, funcName, line);                                 
 }
 
 static inline void PrintSeparator()
 {
-    fprintf(LOG_FILE,
-            "\n\n---------------------------------------------------------------------------\n\n");
+    Log("\n\n---------------------------------------------------------------------------\n\n");
 }

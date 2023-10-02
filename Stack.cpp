@@ -602,6 +602,8 @@ static inline size_t StackGetSizeForCalloc(StackType* const stk)
 #define PRINT_ERR(X) Log(HTML_RED_HEAD_BEGIN "\n" X "\n" HTML_HEAD_END "\n")
 void StackPrintError(StackErrors error)
 {
+    LOG_BEGIN();
+
     switch(error)
     {
         case StackErrors::STACK_CAPACITY_OUT_OF_RANGE:
@@ -632,5 +634,7 @@ void StackPrintError(StackErrors error)
         default:
             break;
     }
+
+    LOG_END();
 }
 #undef PRINT_ERR

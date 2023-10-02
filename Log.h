@@ -22,7 +22,7 @@ void LogBegin(const char* fileName, const char* funcName, const int line);
 /// @brief Prints string to log file
 /// @param [in]format string format as in printf
 /// @param [in]params as in printf
-void Log(const char* format, ...);
+ssize_t Log(const char* format, ...);
 
 /// @brief Ends logging part
 /// @param [in]fileName file from which logging is called

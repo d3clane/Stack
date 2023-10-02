@@ -51,6 +51,8 @@ static ErrorInfoType ErrorInfo =
 
 void PrintError()
 {
+    LOG_BEGIN();
+
     switch(ErrorInfo.error)
     {
         case Errors::MEMORY_ALLOCATION_ERR:
@@ -61,6 +63,8 @@ void PrintError()
         default:
             break;
     }
+
+    LOG_END();
 }
 
 bool HasError()
