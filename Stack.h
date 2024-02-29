@@ -75,7 +75,7 @@ struct StackType
 
 typedef uint64_t StackErrorsType; ///< type for containing errors as bits
 
-/// @brief Errors that can occure while stack is working. 
+/// @brief Errors that can occur while stack is working. 
 enum class StackErrors
 {
     STACK_NO_ERR,

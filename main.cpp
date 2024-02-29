@@ -6,21 +6,28 @@
 int main(const int argc, const char* const argv[]) 
 {
     if (argc > 0) LogOpen(argv[0]);
+
+    StackType stk = {};
+
+    StackCtor(&stk, 4);
+
+    StackPush(&stk, 1237);
+    StackPush(&stk, 111);
+    StackPush(&stk, 12312);
+    StackPop(&stk);
+
+    StackPop(&stk);
+    StackPop(&stk);
+    StackPop(&stk);
+    StackPop(&stk);
     
-    StackType stk = 
-    {
-        .stack    = (ElemType*) calloc(2, sizeof(ElemType)),
-        .size     = 0,
-        .capacity = 2,
-    };
-
-    StackPush(&stk, 17.233232);
-    StackPush(&stk, 21.21);
-    StackPush(&stk, 25.22221123);
-
     StackPop(&stk);
-    StackPop(&stk);
+    StackPush(&stk, 12312);
+    StackPush(&stk, 111);
 
+    //stk.data[stk.capacity - 1] = 17;
 
-    STACK_DUMP(&stk);
+    StackPush(&stk, 111);
+
+    StackDtor(&stk);
 }

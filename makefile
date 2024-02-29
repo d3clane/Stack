@@ -24,7 +24,7 @@ FILESCPP = main.cpp Errors.cpp Stack.cpp Log.cpp ArrayFuncs.cpp HashFuncs.cpp
 
 objects = $(FILESCPP:%.cpp=$(OBJECTDIR)/%.o)
 
-.PHONY: all docs clean install
+.PHONY: all docs clean buildDirs
 
 all: $(TARGET)
 
